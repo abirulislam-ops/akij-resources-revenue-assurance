@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AKIJ Resource — Revenue Assurance & Marketing Forecast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#070c18; --bg2:#0b1220; --card:#101828; --card2:#16203a; --border:#22304e;
+  --text:#e8eefc; --muted:#8b98b8; --faint:#5b6888;
+  --green:#34d399; --amber:#fbbf24; --red:#f87171; --blue:#38bdf8; --grey:#7d8aa6;
+  --indigo:#6366f1; --cyan:#22d3ee;
+  --grad:linear-gradient(135deg,#6366f1 0%,#38bdf8 100%);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(1200px 700px at 15% -10%,#16223f 0%,var(--bg) 55%) fixed,var(--bg);
+  color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+h1,h2,h3,h4{font-family:'Sora',sans-serif;letter-spacing:-.01em}
+.wrap{max-width:1280px;margin:0 auto;padding:0 22px}
+
+/* header */
+header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(7,12,24,.72);border-bottom:1px solid var(--border)}
+.hd-inner{display:flex;align-items:center;gap:16px;padding:16px 0}
+.logo{width:40px;height:40px;border-radius:11px;background:var(--grad);display:grid;place-items:center;font-weight:800;font-family:'Sora';color:#06121f;font-size:17px;box-shadow:0 6px 22px -6px rgba(99,102,241,.7)}
+.hd-title{font-size:17px;font-weight:800;font-family:'Sora'}
+.hd-sub{font-size:12px;color:var(--muted)}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.badge{font-size:11px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--muted);white-space:nowrap}
+.badge b{color:var(--text);font-weight:600}
+
+/* kpi cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0}
+.kpi{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;position:relative;overflow:hidden;transition:transform .15s ease,border-color .15s ease}
+.kpi:hover{transform:translateY(-2px);border-color:#33476f}
+.kpi .lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.kpi .val{font-size:24px;font-weight:800;font-family:'Sora';letter-spacing:-.02em}
+.kpi .sub{font-size:11px;color:var(--faint);margin-top:4px}
+.kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grad)}
+.kpi.g .val{color:var(--green)} .kpi.a .val{color:var(--amber)} .kpi.r .val{color:var(--red)}
+.kpi.b .val{color:var(--blue)}
+
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{appearance:none;background:none;border:none;color:var(--muted);font-family:'Sora';font-weight:600;font-size:13px;padding:11px 16px;cursor:pointer;position:relative;border-radius:9px 9px 0 0}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text)}
+.tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:3px;background:var(--grad);border-radius:3px 3px 0 0}
+
+section.pane{display:none;animation:fade .25s ease}
+section.pane.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.card h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.card .desc{font-size:12px;color:var(--muted);margin-bottom:14px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+.chart-box{position:relative;height:300px}
+.chart-box.tall{height:340px}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:9px 11px;text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+th:first-child,td:first-child{text-align:left}
+td{border-bottom:1px solid #1a2440}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--card2)}
+tr.click{cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+.pos{color:var(--green);font-weight:600}
+.neg{color:var(--red);font-weight:600}
+.mut{color:var(--muted)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.green{color:var(--green);background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3)}
+.pill.amber{color:var(--amber);background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3)}
+.pill.red{color:var(--red);background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.3)}
+.pill.grey{color:var(--grey);background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.3)}
+.pill.blue{color:var(--blue);background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.3)}
+
+/* detail header */
+.sbu-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.sbu-head h2{font-size:22px}
+.sbu-meta{font-size:12px;color:var(--muted)}
+.sbu-controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+select{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:13px;font-family:inherit;cursor:pointer;outline:none;max-width:260px}
+.nav-btn{background:var(--card2);border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:15px}
+.nav-btn:hover{color:var(--text);border-color:#33476f}
+
+.verdict{border-left:3px solid;padding:12px 15px;border-radius:0 10px 10px 0;background:var(--card2);margin:10px 0}
+.verdict.green{border-color:var(--green)} .verdict.amber{border-color:var(--amber)}
+.verdict.red{border-color:var(--red)} .verdict.grey{border-color:var(--grey)}
+.verdict .vt{font-weight:700;font-size:13px;margin-bottom:3px}
+.verdict .vn{font-size:12.5px;color:var(--muted)}
+
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}
+.mini{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.mini .ml{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.mini .mv{font-size:17px;font-weight:800;font-family:'Sora';margin-top:2px}
+
+.scenario{width:100%;border-collapse:collapse;font-size:12.5px}
+.scenario th,.scenario td{padding:8px 11px;text-align:right}
+.scenario th{color:var(--muted);font-size:11px;border-bottom:1px solid var(--border)}
+.scenario td{border-bottom:1px solid #1a2440}
+.scenario td:first-child{text-align:left}
+.scenario tr.hl td{background:rgba(99,102,241,.12);font-weight:600}
+
+.note{font-size:11.5px;color:var(--faint);font-style:italic}
+.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:12px 15px;font-size:12.5px;color:#fcd34d;margin:10px 0}
+.warn b{color:var(--amber)}
+.callout{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:10px 0}
+.callout h4{font-size:13px;margin-bottom:6px}
+.callout p,.callout li{font-size:12.5px;color:var(--muted)}
+.callout ul{padding-left:18px;margin-top:4px}
+footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<header><div class="wrap hd-inner">
+  <div class="logo">AR</div>
+  <div>
+    <div class="hd-title">Revenue Assurance &amp; Marketing Forecast</div>
+    <div class="hd-sub">AKIJ Resource · Strategic Planning &amp; Analysis · FY 2026-27</div>
+  </div>
+  <div class="hd-right">
+    <span class="badge">As-of <b>9 Sep 2026</b></span>
+    <span class="badge">Unit <b>BDT Crore</b></span>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-t="overview">Overview</button>
+    <button class="tab" data-t="forecast">Forecast</button>
+    <button class="tab" data-t="detail">SBU Detail</button>
+    <button class="tab" data-t="assumptions">Assumptions &amp; Method</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <section class="pane active" id="tab-overview">
+    <div class="card" style="margin-bottom:14px">
+      <h3>Portfolio — Marketing Performance &amp; Year-End Projection</h3>
+      <div class="desc">16 SBUs. Click any row to open its SBU detail. Click a column header to sort.</div>
+      <div style="overflow-x:auto"><table id="ptable">
+        <thead><tr>
+          <th data-k="name">SBU</th><th data-k="category">Category</th>
+          <th data-k="rev_tgt">Target</th><th data-k="cy_tot">Q1 Rev</th>
+          <th data-k="rev_ach">Q1 Ach%</th><th data-k="mr_tot">Mkt Revenue</th>
+          <th data-k="mp_tot">Mkt Profit</th><th data-k="cy_mkt_tot">Mkt Spend</th>
+          <th data-k="cy_intensity">Spend%</th><th data-k="proj_base">Projected FY</th>
+          <th data-k="projected_ach">Proj Ach%</th><th data-k="status.label">Status</th>
+        </tr></thead>
+        <tbody id="pbody"></tbody>
+      </table></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Q1 Revenue Achievement by SBU</h3><div class="desc">vs Q1 phased target (RAG: ≥90% green, 60-90% amber, &lt;60% red)</div><div class="chart-box"><canvas id="ovAch"></canvas></div></div>
+      <div class="card"><h3>Marketing Revenue by SBU</h3><div class="desc">CY − PY (like-for-like). Green = growth, red = below prior year.</div><div class="chart-box"><canvas id="ovMr"></canvas></div></div>
+      <div class="card"><h3>Projected FY27 Achievement by SBU</h3><div class="desc">Where each SBU lands if the current trend holds for the next 9 months.</div><div class="chart-box"><canvas id="ovProj"></canvas></div></div>
+      <div class="card"><h3>Marketing Spend Share</h3><div class="desc">Share of Q1-to-date marketing spend (GL 4210001).</div><div class="chart-box"><canvas id="ovSpend"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- FORECAST -->
+  <section class="pane" id="tab-forecast">
+    <div class="grid g2" style="margin-bottom:14px">
+      <div class="card"><h3>Portfolio Monthly — Actual + Forecast vs Target</h3><div class="desc">Green = actual (Jul-Sep), blue = forecast (Oct-Jun). Grey dashed = monthly target.</div><div class="chart-box tall"><canvas id="fcMonthly"></canvas></div></div>
+      <div class="card"><h3>Projected FY27 vs Target</h3><div class="desc">Current-trend projection (seasonal × Q1 YoY) against the annual plan.</div><div class="chart-box tall"><canvas id="fcBar"></canvas></div></div>
+    </div>
+    <div class="card">
+      <h3>Q1 Achievement vs Projected Achievement</h3>
+      <div class="desc">X = how we're tracking now (Q1), Y = where we land at year-end if the trend holds. Quadrants split at 100%. Bubble size = revenue target.</div>
+      <div class="chart-box tall"><canvas id="fcScatter"></canvas></div>
+    </div>
+  </section>
+
+  <!-- DETAIL -->
+  <section class="pane" id="tab-detail">
+    <div class="sbu-head">
+      <div>
+        <h2 id="dName">—</h2>
+        <div class="sbu-meta" id="dMeta"></div>
+      </div>
+      <div class="sbu-controls">
+        <button class="nav-btn" id="prevSbu">‹</button>
+        <select id="sbuSelect"></select>
+        <button class="nav-btn" id="nextSbu">›</button>
+      </div>
+    </div>
+    <div id="dStatus"></div>
+    <div id="dVerdict"></div>
+    <div class="mini-grid" id="dMinis"></div>
+    <div class="grid g2">
+      <div class="card" style="grid-column:1/-1"><h3>FY27 — Actual + Forecast vs Monthly Target</h3><div class="desc">Full-year path. Green = achieved, blue = projected on current trend, dashed = target.</div><div class="chart-box tall"><canvas id="dForecast"></canvas></div></div>
+      <div class="card"><h3>Revenue — CY vs PY (Q1)</h3><div class="desc">Like-for-like comparison of the first three months.</div><div class="chart-box"><canvas id="dCyPy"></canvas></div></div>
+      <div class="card"><h3>Marketing Revenue by Month</h3><div class="desc">Year-over-year revenue change. Green = growth, red = decline.</div><div class="chart-box"><canvas id="dMr"></canvas></div></div>
+      <div class="card" style="grid-column:1/-1"><h3>15-Month Revenue Trajectory</h3><div class="desc">Blue = FY26, green = FY27. Sep-26* is month-to-date (9 days).</div><div class="chart-box"><canvas id="dTraj"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Scenario — where FY27 lands</h3>
+      <div class="desc">Three projections: repeat FY26 (0% growth), hold the current Q1 trend, or hit the plan.</div>
+      <table class="scenario"><thead><tr><th>Scenario</th><th>Projected FY27 (Cr)</th><th>Achievement</th><th>Signal</th></tr></thead><tbody id="dScen"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ASSUMPTIONS -->
+  <section class="pane" id="tab-assumptions">
+    <div class="card">
+      <h3>Assumptions &amp; Method</h3>
+      <div class="desc">Everything that underpins the numbers, and what still needs business confirmation.</div>
+
+      <div class="warn"><b>Assumption to confirm #1 — AEL target.</b> FY26 actual revenue was 3,235 Cr, but the FY27
+      target is 1,985 Cr and is labelled "+55.8% growth". These are inconsistent — confirm the FY27 scope (a line may be
+      divested or excluded) before relying on this target. Even on a −29% trend the projection (2,210 Cr) exceeds it.</div>
+
+      <div class="warn"><b>Assumption to confirm #2 — portfolio total.</b> The sum of the 16 SBU revenue targets is
+      9,111 Cr, but the RAP deck's headline total is 7,129 Cr. Confirm which SBUs the 7,129 Cr covers before relying on the portfolio total.</div>
+
+      <div class="callout"><h4>Revenue basis</h4>
+        <p>DWH <code>fin.tblAccountingJournalArc</code>, GL 3010001 (Sales Local) + 3010002 (Sales Foreign), credit entries.
+        Freight (3010005) and Agency (3010006) income are excluded — cost pass-through / commission, not marketing-driven
+        sales. Same basis as the Automated ROMI engine.</p></div>
+
+      <div class="callout"><h4>Marketing Revenue &amp; Profit</h4>
+        <p>Marketing Revenue = CY revenue − PY same-period revenue (like-for-like; Sep uses the same 9 days of Sep-25).
+        Marketing Profit = Marketing Revenue × FY26 gross margin ((Revenue − COGS 4810001) / Revenue). No ROMI — this is a
+        business-health view, not a media-efficiency view.</p></div>
+
+      <div class="callout"><h4>Forecast method (seasonal × trend)</h4>
+        <ul>
+          <li>Each remaining month = prior-year same-month × (1 + Q1-to-date YoY growth), preserving seasonality while carrying the current trend forward.</li>
+          <li>A YoY trend is only used when the prior-year Q1 is a genuine base (≥40% of current Q1); otherwise (new/ramp/pre-launch SBUs) the forecast is held flat at the recent Jul+Aug run-rate.</li>
+          <li>Trend is capped at ±100% to prevent explosive extrapolation.</li>
+          <li>Three scenarios: Repeat FY26 (0% growth) / Current trend / Plan (target).</li>
+        </ul></div>
+
+      <div class="callout"><h4>Data caveats</h4>
+        <ul>
+          <li>Sep-26 is 9 days MTD; prior-year comparators are like-for-like.</li>
+          <li>AASL (Air) GL revenue is volatile (refunds) and its 190 Cr target conflicts with the 20.16 Cr budget.</li>
+          <li>ACL (OASIS) has a negative FY26 gross margin and is winding down — its Marketing Profit is not meaningful.</li>
+          <li>Mediquip / AgriLife / Landmark are pre-launch (no material revenue yet).</li>
+          <li>DWH GL actuals can exceed the SPA budget-vs-actual "net sales" because GL is gross billing.</li>
+        </ul></div>
+    </div>
+  </section>
+
+  <footer>AKIJ Resource · Strategic Planning &amp; Analysis — marketing situation &amp; forecast working file · Generated from DWH (as-of 9 Sep 2026) · Data refresh via <code>dwh_extract.py</code> → <code>build_web.py</code></footer>
+</div>
+
+<script>
+const DATA = {"meta": {"as_of": "9 Sep 2026", "unit": "BDT Crore", "total_rev": 9111.2, "total_cy": 1408.0, "total_cy_ach": 0.1545, "total_mr": -175.2, "total_mp": 51.2, "total_mkt": 60.8, "total_proj": 7514.7, "total_proj_ach": 0.8248, "months": [{"label": "Jul-26", "val": 566.2, "target": 717.5, "actual": true}, {"label": "Aug-26", "val": 700.3, "target": 717.5, "actual": true}, {"label": "Sep-26*", "val": 141.6, "target": 717.5, "actual": true}, {"label": "Oct-26", "val": 685.6, "target": 760.9, "actual": false}, {"label": "Nov-26", "val": 701.3, "target": 760.9, "actual": false}, {"label": "Dec-26", "val": 730.6, "target": 760.9, "actual": false}, {"label": "Jan-27", "val": 793.1, "target": 779.5, "actual": false}, {"label": "Feb-27", "val": 741.3, "target": 779.5, "actual": false}, {"label": "Mar-27", "val": 676.9, "target": 779.5, "actual": false}, {"label": "Apr-27", "val": 713.6, "target": 779.2, "actual": false}, {"label": "May-27", "val": 517.0, "target": 779.2, "actual": false}, {"label": "Jun-27", "val": 547.2, "target": 779.2, "actual": false}], "count": 16}, "sbus": [{"code": "ACCL", "name": "Akij Cement Company Ltd.", "category": "Cement", "bu_id": 4, "gp": 0.4222, "rev_tgt": 2315.0, "mktled_lo": 410, "mktled_hi": 410, "q": {"1": 0.22, "2": 0.26, "3": 0.27, "4": 0.25}, "note": "Monthly avg BDT 192.9 Cr. Q phasing per RAP.", "cy_tot": 333.14, "py_tot": 345.87, "mr_tot": -12.73, "mp_tot": -5.37, "cy_mkt_tot": 43.58, "cy_intensity": 0.1308, "rev_ach": 0.6541, "rev_gap": 176.16, "mktled_gap": 115.23, "trend": -0.03680249813710157, "proj_base": 1761.08, "proj_pess": 1815.64, "projected_ach": 0.7607, "run_rate": 152.35, "required_run": 220.21, "status": {"tone": "amber", "label": "On track but below prior year", "narrative": "Revenue is 65% of the Q1 phased target, but marketing revenue is negative (-12.7 Cr) vs prior year.", "focus": "Diagnose the YoY softness (pricing / distribution / phasing) and re-target spend."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 150.195, "py": 161.274, "mr": -11.079}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 154.5, "py": 153.422, "mr": 1.078}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 28.45, "py": 31.177, "mr": -2.728}], "fc": [{"label": "Jul-26", "val": 150.19, "target": 169.77, "actual": true}, {"label": "Aug-26", "val": 154.5, "target": 169.77, "actual": true}, {"label": "Sep-26*", "val": 28.45, "target": 169.77, "actual": true}, {"label": "Oct-26", "val": 150.99, "target": 200.63, "actual": false}, {"label": "Nov-26", "val": 161.83, "target": 200.63, "actual": false}, {"label": "Dec-26", "val": 167.93, "target": 200.63, "actual": false}, {"label": "Jan-27", "val": 174.92, "target": 208.35, "actual": false}, {"label": "Feb-27", "val": 146.62, "target": 208.35, "actual": false}, {"label": "Mar-27", "val": 163.01, "target": 208.35, "actual": false}, {"label": "Apr-27", "val": 174.52, "target": 192.92, "actual": false}, {"label": "May-27", "val": 137.81, "target": 192.92, "actual": false}, {"label": "Jun-27", "val": 150.32, "target": 192.92, "actual": false}], "traj": [{"l": "Jul-25", "v": 161.27, "fy": "fy26"}, {"l": "Aug-25", "v": 153.42, "fy": "fy26"}, {"l": "Sep-25", "v": 169.64, "fy": "fy26"}, {"l": "Oct-25", "v": 156.76, "fy": "fy26"}, {"l": "Nov-25", "v": 168.01, "fy": "fy26"}, {"l": "Dec-25", "v": 174.34, "fy": "fy26"}, {"l": "Jan-26", "v": 181.6, "fy": "fy26"}, {"l": "Feb-26", "v": 152.22, "fy": "fy26"}, {"l": "Mar-26", "v": 169.23, "fy": "fy26"}, {"l": "Apr-26", "v": 181.19, "fy": "fy26"}, {"l": "May-26", "v": 143.08, "fy": "fy26"}, {"l": "Jun-26", "v": 156.06, "fy": "fy26"}, {"l": "Jul-26", "v": 150.19, "fy": "fy27"}, {"l": "Aug-26", "v": 154.5, "fy": "fy27"}, {"l": "Sep-26*", "v": 28.45, "fy": "fy27"}]}, {"code": "AEL", "name": "Akij Essentials Ltd.", "category": "Staples / FMCG", "bu_id": 144, "gp": 0.0288, "rev_tgt": 1985.0, "mktled_lo": 222, "mktled_hi": 235, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "+55.8% vs FY25-26 closed revenue.", "cy_tot": 458.74, "py_tot": 649.93, "mr_tot": -191.2, "mp_tot": -5.51, "cy_mkt_tot": 7.43, "cy_intensity": 0.0162, "rev_ach": 0.9244, "rev_gap": 37.51, "mktled_gap": 248.32, "trend": -0.2941793846371279, "proj_base": 2210.37, "proj_pess": 2940.44, "projected_ach": 1.1135, "run_rate": 209.06, "required_run": 169.58, "status": {"tone": "amber", "label": "On track but below prior year", "narrative": "Revenue is 92% of the Q1 phased target, but marketing revenue is negative (-191.2 Cr) vs prior year.", "focus": "Diagnose the YoY softness (pricing / distribution / phasing) and re-target spend."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 160.292, "py": 278.38, "mr": -118.089}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 257.836, "py": 304.853, "mr": -47.018}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 40.608, "py": 66.699, "mr": -26.091}], "fc": [{"label": "Jul-26", "val": 160.29, "target": 165.42, "actual": true}, {"label": "Aug-26", "val": 257.84, "target": 165.42, "actual": true}, {"label": "Sep-26*", "val": 40.61, "target": 165.42, "actual": true}, {"label": "Oct-26", "val": 253.59, "target": 165.42, "actual": false}, {"label": "Nov-26", "val": 238.76, "target": 165.42, "actual": false}, {"label": "Dec-26", "val": 250.98, "target": 165.42, "actual": false}, {"label": "Jan-27", "val": 262.37, "target": 165.42, "actual": false}, {"label": "Feb-27", "val": 226.95, "target": 165.42, "actual": false}, {"label": "Mar-27", "val": 166.4, "target": 165.42, "actual": false}, {"label": "Apr-27", "val": 167.18, "target": 165.42, "actual": false}, {"label": "May-27", "val": 88.1, "target": 165.42, "actual": false}, {"label": "Jun-27", "val": 97.33, "target": 165.42, "actual": false}], "traj": [{"l": "Jul-25", "v": 278.38, "fy": "fy26"}, {"l": "Aug-25", "v": 304.85, "fy": "fy26"}, {"l": "Sep-25", "v": 169.81, "fy": "fy26"}, {"l": "Oct-25", "v": 359.28, "fy": "fy26"}, {"l": "Nov-25", "v": 338.27, "fy": "fy26"}, {"l": "Dec-25", "v": 355.58, "fy": "fy26"}, {"l": "Jan-26", "v": 371.72, "fy": "fy26"}, {"l": "Feb-26", "v": 321.54, "fy": "fy26"}, {"l": "Mar-26", "v": 235.76, "fy": "fy26"}, {"l": "Apr-26", "v": 236.85, "fy": "fy26"}, {"l": "May-26", "v": 124.81, "fy": "fy26"}, {"l": "Jun-26", "v": 137.89, "fy": "fy26"}, {"l": "Jul-26", "v": 160.29, "fy": "fy27"}, {"l": "Aug-26", "v": 257.84, "fy": "fy27"}, {"l": "Sep-26*", "v": 40.61, "fy": "fy27"}]}, {"code": "AIL", "name": "Akij Ispat Limited", "category": "Steel / Rebar", "bu_id": 224, "gp": 0.1667, "rev_tgt": 1764.0, "mktled_lo": 656, "mktled_hi": 656, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "RAP exec summary 1,764 Cr vs section 1,798.25 Cr; using 1,764.", "cy_tot": 199.03, "py_tot": 195.87, "mr_tot": 3.15, "mp_tot": 0.53, "cy_mkt_tot": 3.34, "cy_intensity": 0.0168, "rev_ach": 0.4513, "rev_gap": 241.97, "mktled_gap": 160.85, "trend": 0.016101970257061726, "proj_base": 1304.07, "proj_pess": 1286.56, "projected_ach": 0.7393, "run_rate": 86.7, "required_run": 173.89, "status": {"tone": "amber", "label": "Growing but behind plan", "narrative": "Marketing revenue is positive (+3.2 Cr) but revenue is only 45% of the Q1 phased target.", "focus": "Scale the winning campaigns and widen distribution to lift run-rate toward target."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 77.86, "py": 89.992, "mr": -12.132}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 95.541, "py": 80.68, "mr": 14.861}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 25.627, "py": 25.202, "mr": 0.424}], "fc": [{"label": "Jul-26", "val": 77.86, "target": 147.0, "actual": true}, {"label": "Aug-26", "val": 95.54, "target": 147.0, "actual": true}, {"label": "Sep-26*", "val": 25.63, "target": 147.0, "actual": true}, {"label": "Oct-26", "val": 90.6, "target": 147.0, "actual": false}, {"label": "Nov-26", "val": 98.0, "target": 147.0, "actual": false}, {"label": "Dec-26", "val": 104.65, "target": 147.0, "actual": false}, {"label": "Jan-27", "val": 138.13, "target": 147.0, "actual": false}, {"label": "Feb-27", "val": 160.19, "target": 147.0, "actual": false}, {"label": "Mar-27", "val": 143.53, "target": 147.0, "actual": false}, {"label": "Apr-27", "val": 161.05, "target": 147.0, "actual": false}, {"label": "May-27", "val": 87.9, "target": 147.0, "actual": false}, {"label": "Jun-27", "val": 120.98, "target": 147.0, "actual": false}], "traj": [{"l": "Jul-25", "v": 89.99, "fy": "fy26"}, {"l": "Aug-25", "v": 80.68, "fy": "fy26"}, {"l": "Sep-25", "v": 90.17, "fy": "fy26"}, {"l": "Oct-25", "v": 89.17, "fy": "fy26"}, {"l": "Nov-25", "v": 96.44, "fy": "fy26"}, {"l": "Dec-25", "v": 102.99, "fy": "fy26"}, {"l": "Jan-26", "v": 135.95, "fy": "fy26"}, {"l": "Feb-26", "v": 157.65, "fy": "fy26"}, {"l": "Mar-26", "v": 141.26, "fy": "fy26"}, {"l": "Apr-26", "v": 158.5, "fy": "fy26"}, {"l": "May-26", "v": 86.51, "fy": "fy26"}, {"l": "Jun-26", "v": 119.07, "fy": "fy26"}, {"l": "Jul-26", "v": 77.86, "fy": "fy27"}, {"l": "Aug-26", "v": 95.54, "fy": "fy27"}, {"l": "Sep-26*", "v": 25.63, "fy": "fy27"}]}, {"code": "AAFL", "name": "Akij Agro Feed Ltd.", "category": "Feed", "bu_id": 232, "gp": 0.1874, "rev_tgt": 1343.0, "mktled_lo": 245, "mktled_hi": 245, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "~67 SKUs; commercial ops since Jan 2025.", "cy_tot": 231.51, "py_tot": 141.17, "mr_tot": 90.34, "mp_tot": 16.93, "cy_mkt_tot": 1.99, "cy_intensity": 0.0086, "rev_ach": 0.6895, "rev_gap": 104.24, "mktled_gap": -29.09, "trend": 0.6399239461601449, "proj_base": 1422.6, "proj_pess": 957.82, "projected_ach": 1.0593, "run_rate": 102.16, "required_run": 123.5, "status": {"tone": "amber", "label": "Growing & on track", "narrative": "Revenue is 69% of the Q1 phased target with positive marketing revenue (+90.3 Cr).", "focus": "Close the remaining gap in the next 1-2 months; sustain the marketing that is driving growth."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 92.94, "py": 69.281, "mr": 23.659}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 111.387, "py": 60.229, "mr": 51.158}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 27.182, "py": 11.661, "mr": 15.521}], "fc": [{"label": "Jul-26", "val": 92.94, "target": 111.92, "actual": true}, {"label": "Aug-26", "val": 111.39, "target": 111.92, "actual": true}, {"label": "Sep-26*", "val": 27.18, "target": 111.92, "actual": true}, {"label": "Oct-26", "val": 115.49, "target": 111.92, "actual": false}, {"label": "Nov-26", "val": 126.57, "target": 111.92, "actual": false}, {"label": "Dec-26", "val": 126.93, "target": 111.92, "actual": false}, {"label": "Jan-27", "val": 141.36, "target": 111.92, "actual": false}, {"label": "Feb-27", "val": 133.94, "target": 111.92, "actual": false}, {"label": "Mar-27", "val": 137.58, "target": 111.92, "actual": false}, {"label": "Apr-27", "val": 149.56, "target": 111.92, "actual": false}, {"label": "May-27", "val": 132.2, "target": 111.92, "actual": false}, {"label": "Jun-27", "val": 127.44, "target": 111.92, "actual": false}], "traj": [{"l": "Jul-25", "v": 69.28, "fy": "fy26"}, {"l": "Aug-25", "v": 60.23, "fy": "fy26"}, {"l": "Sep-25", "v": 64.28, "fy": "fy26"}, {"l": "Oct-25", "v": 70.43, "fy": "fy26"}, {"l": "Nov-25", "v": 77.18, "fy": "fy26"}, {"l": "Dec-25", "v": 77.4, "fy": "fy26"}, {"l": "Jan-26", "v": 86.2, "fy": "fy26"}, {"l": "Feb-26", "v": 81.67, "fy": "fy26"}, {"l": "Mar-26", "v": 83.89, "fy": "fy26"}, {"l": "Apr-26", "v": 91.2, "fy": "fy26"}, {"l": "May-26", "v": 80.61, "fy": "fy26"}, {"l": "Jun-26", "v": 77.71, "fy": "fy26"}, {"l": "Jul-26", "v": 92.94, "fy": "fy27"}, {"l": "Aug-26", "v": 111.39, "fy": "fy27"}, {"l": "Sep-26*", "v": 27.18, "fy": "fy27"}]}, {"code": "ARMCL", "name": "Akij Ready Mix Concrete Ltd", "category": "Readymix Concrete", "bu_id": 175, "gp": 0.2469, "rev_tgt": 458.5, "mktled_lo": 50, "mktled_hi": 80, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "Target range 441-476 Cr (mid 458.5).", "cy_tot": 80.87, "py_tot": 82.15, "mr_tot": -1.28, "mp_tot": -0.32, "cy_mkt_tot": 0.4, "cy_intensity": 0.005, "rev_ach": 0.7056, "rev_gap": 33.75, "mktled_gap": 17.53, "trend": -0.015537215534437765, "proj_base": 337.64, "proj_pess": 341.7, "projected_ach": 0.7364, "run_rate": 35.02, "required_run": 41.96, "status": {"tone": "amber", "label": "On track but below prior year", "narrative": "Revenue is 71% of the Q1 phased target, but marketing revenue is negative (-1.3 Cr) vs prior year.", "focus": "Diagnose the YoY softness (pricing / distribution / phasing) and re-target spend."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 29.705, "py": 35.569, "mr": -5.864}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 40.336, "py": 36.011, "mr": 4.326}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 10.833, "py": 10.571, "mr": 0.262}], "fc": [{"label": "Jul-26", "val": 29.7, "target": 38.21, "actual": true}, {"label": "Aug-26", "val": 40.34, "target": 38.21, "actual": true}, {"label": "Sep-26*", "val": 10.83, "target": 38.21, "actual": true}, {"label": "Oct-26", "val": 32.5, "target": 38.21, "actual": false}, {"label": "Nov-26", "val": 30.86, "target": 38.21, "actual": false}, {"label": "Dec-26", "val": 33.24, "target": 38.21, "actual": false}, {"label": "Jan-27", "val": 36.03, "target": 38.21, "actual": false}, {"label": "Feb-27", "val": 28.72, "target": 38.21, "actual": false}, {"label": "Mar-27", "val": 22.63, "target": 38.21, "actual": false}, {"label": "Apr-27", "val": 21.53, "target": 38.21, "actual": false}, {"label": "May-27", "val": 35.84, "target": 38.21, "actual": false}, {"label": "Jun-27", "val": 15.41, "target": 38.21, "actual": false}], "traj": [{"l": "Jul-25", "v": 35.57, "fy": "fy26"}, {"l": "Aug-25", "v": 36.01, "fy": "fy26"}, {"l": "Sep-25", "v": 31.85, "fy": "fy26"}, {"l": "Oct-25", "v": 33.01, "fy": "fy26"}, {"l": "Nov-25", "v": 31.35, "fy": "fy26"}, {"l": "Dec-25", "v": 33.77, "fy": "fy26"}, {"l": "Jan-26", "v": 36.6, "fy": "fy26"}, {"l": "Feb-26", "v": 29.17, "fy": "fy26"}, {"l": "Mar-26", "v": 22.99, "fy": "fy26"}, {"l": "Apr-26", "v": 21.87, "fy": "fy26"}, {"l": "May-26", "v": 36.4, "fy": "fy26"}, {"l": "Jun-26", "v": 15.66, "fy": "fy26"}, {"l": "Jul-26", "v": 29.7, "fy": "fy27"}, {"l": "Aug-26", "v": 40.34, "fy": "fy27"}, {"l": "Sep-26*", "v": 10.83, "fy": "fy27"}]}, {"code": "ALEL", "name": "Akij Light Engineering Limited (Enovar)", "category": "Electrical", "bu_id": 237, "gp": 0.4991, "rev_tgt": 350.07, "mktled_lo": 164, "mktled_hi": 164, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "Enovar; electrical 74.6% of target.", "cy_tot": 46.86, "py_tot": 1.54, "mr_tot": 45.31, "mp_tot": 22.61, "cy_mkt_tot": 2.05, "cy_intensity": 0.0439, "rev_ach": 0.5354, "rev_gap": 40.66, "mktled_gap": -4.31, "trend": null, "proj_base": 236.65, "proj_pess": 236.65, "projected_ach": 0.676, "run_rate": 21.09, "required_run": 33.69, "status": {"tone": "amber", "label": "Growing but behind plan", "narrative": "Marketing revenue is positive (+45.3 Cr) but revenue is only 54% of the Q1 phased target.", "focus": "Scale the winning campaigns and widen distribution to lift run-rate toward target."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 20.097, "py": 0.0, "mr": 20.097}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 22.078, "py": 1.339, "mr": 20.74}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 4.679, "py": 0.205, "mr": 4.474}], "fc": [{"label": "Jul-26", "val": 20.1, "target": 29.17, "actual": true}, {"label": "Aug-26", "val": 22.08, "target": 29.17, "actual": true}, {"label": "Sep-26*", "val": 4.68, "target": 29.17, "actual": true}, {"label": "Oct-26", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Nov-26", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Dec-26", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Jan-27", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Feb-27", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Mar-27", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Apr-27", "val": 21.09, "target": 29.17, "actual": false}, {"label": "May-27", "val": 21.09, "target": 29.17, "actual": false}, {"label": "Jun-27", "val": 21.09, "target": 29.17, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 1.34, "fy": "fy26"}, {"l": "Sep-25", "v": 6.1, "fy": "fy26"}, {"l": "Oct-25", "v": 10.24, "fy": "fy26"}, {"l": "Nov-25", "v": 10.23, "fy": "fy26"}, {"l": "Dec-25", "v": 12.77, "fy": "fy26"}, {"l": "Jan-26", "v": 15.92, "fy": "fy26"}, {"l": "Feb-26", "v": 13.75, "fy": "fy26"}, {"l": "Mar-26", "v": 13.56, "fy": "fy26"}, {"l": "Apr-26", "v": 16.91, "fy": "fy26"}, {"l": "May-26", "v": 17.01, "fy": "fy26"}, {"l": "Jun-26", "v": 18.57, "fy": "fy26"}, {"l": "Jul-26", "v": 20.1, "fy": "fy27"}, {"l": "Aug-26", "v": 22.08, "fy": "fy27"}, {"l": "Sep-26*", "v": 4.68, "fy": "fy27"}]}, {"code": "ALCL", "name": "AKIJ LifeCare Ltd. (Pharmacy)", "category": "Healthcare Retail", "bu_id": 239, "gp": 0.1153, "rev_tgt": 217.96, "mktled_lo": 32.69, "mktled_hi": 32.69, "q": {"1": 0.122, "2": 0.201, "3": 0.282, "4": 0.395}, "note": "Pharmacy; back-loaded Q4 (39.5%).", "cy_tot": 15.48, "py_tot": 2.07, "mr_tot": 13.4, "mp_tot": 1.55, "cy_mkt_tot": 0.13, "cy_intensity": 0.0083, "rev_ach": 0.5821, "rev_gap": 11.11, "mktled_gap": -5.23, "trend": null, "proj_base": 75.62, "proj_pess": 75.62, "projected_ach": 0.3469, "run_rate": 6.68, "required_run": 22.5, "status": {"tone": "amber", "label": "Growing but behind plan", "narrative": "Marketing revenue is positive (+13.4 Cr) but revenue is only 58% of the Q1 phased target.", "focus": "Scale the winning campaigns and widen distribution to lift run-rate toward target."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 6.19, "py": 0.516, "mr": 5.673}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 7.174, "py": 1.147, "mr": 6.027}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 2.115, "py": 0.411, "mr": 1.704}], "fc": [{"label": "Jul-26", "val": 6.19, "target": 8.86, "actual": true}, {"label": "Aug-26", "val": 7.17, "target": 8.86, "actual": true}, {"label": "Sep-26*", "val": 2.11, "target": 8.86, "actual": true}, {"label": "Oct-26", "val": 6.68, "target": 14.6, "actual": false}, {"label": "Nov-26", "val": 6.68, "target": 14.6, "actual": false}, {"label": "Dec-26", "val": 6.68, "target": 14.6, "actual": false}, {"label": "Jan-27", "val": 6.68, "target": 20.49, "actual": false}, {"label": "Feb-27", "val": 6.68, "target": 20.49, "actual": false}, {"label": "Mar-27", "val": 6.68, "target": 20.49, "actual": false}, {"label": "Apr-27", "val": 6.68, "target": 28.7, "actual": false}, {"label": "May-27", "val": 6.68, "target": 28.7, "actual": false}, {"label": "Jun-27", "val": 6.68, "target": 28.7, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.52, "fy": "fy26"}, {"l": "Aug-25", "v": 1.15, "fy": "fy26"}, {"l": "Sep-25", "v": 1.51, "fy": "fy26"}, {"l": "Oct-25", "v": 1.96, "fy": "fy26"}, {"l": "Nov-25", "v": 2.27, "fy": "fy26"}, {"l": "Dec-25", "v": 2.83, "fy": "fy26"}, {"l": "Jan-26", "v": 3.19, "fy": "fy26"}, {"l": "Feb-26", "v": 3.15, "fy": "fy26"}, {"l": "Mar-26", "v": 3.29, "fy": "fy26"}, {"l": "Apr-26", "v": 4.21, "fy": "fy26"}, {"l": "May-26", "v": 4.49, "fy": "fy26"}, {"l": "Jun-26", "v": 5.47, "fy": "fy26"}, {"l": "Jul-26", "v": 6.19, "fy": "fy27"}, {"l": "Aug-26", "v": 7.17, "fy": "fy27"}, {"l": "Sep-26*", "v": 2.11, "fy": "fy27"}]}, {"code": "AASL", "name": "Akij Air Service Ltd.", "category": "Air / Travel", "bu_id": 245, "gp": 1.0, "rev_tgt": 190.0, "mktled_lo": 11.09, "mktled_hi": 20.0, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "Air: RAP '190+ Cr' vs budget 20.16 Cr — flagged.", "cy_tot": 1.88, "py_tot": 0.17, "mr_tot": 1.7, "mp_tot": 1.7, "cy_mkt_tot": 0.27, "cy_intensity": 0.1438, "rev_ach": 0.0395, "rev_gap": 45.62, "mktled_gap": 2.18, "trend": null, "proj_base": 9.82, "proj_pess": 9.82, "projected_ach": 0.0517, "run_rate": 0.88, "required_run": 20.9, "status": {"tone": "amber", "label": "Volatile / data caveat", "narrative": "Air ticketing GL revenue is volatile (refunds) and the 190 Cr target conflicts with the 20.16 Cr budget.", "focus": "Reconcile the ticket-revenue recognition and the target base before committing marketing spend."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 1.139, "py": -3.093, "mr": 4.231}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.627, "py": -5.212, "mr": 5.839}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.109, "py": 8.475, "mr": -8.366}], "fc": [{"label": "Jul-26", "val": 1.14, "target": 15.83, "actual": true}, {"label": "Aug-26", "val": 0.63, "target": 15.83, "actual": true}, {"label": "Sep-26*", "val": 0.11, "target": 15.83, "actual": true}, {"label": "Oct-26", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Nov-26", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Dec-26", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Jan-27", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Feb-27", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Mar-27", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Apr-27", "val": 0.88, "target": 15.83, "actual": false}, {"label": "May-27", "val": 0.88, "target": 15.83, "actual": false}, {"label": "Jun-27", "val": 0.88, "target": 15.83, "actual": false}], "traj": [{"l": "Jul-25", "v": -3.09, "fy": "fy26"}, {"l": "Aug-25", "v": -5.21, "fy": "fy26"}, {"l": "Sep-25", "v": 5.91, "fy": "fy26"}, {"l": "Oct-25", "v": -1.2, "fy": "fy26"}, {"l": "Nov-25", "v": -1.44, "fy": "fy26"}, {"l": "Dec-25", "v": 0.98, "fy": "fy26"}, {"l": "Jan-26", "v": -0.25, "fy": "fy26"}, {"l": "Feb-26", "v": 0.44, "fy": "fy26"}, {"l": "Mar-26", "v": 0.67, "fy": "fy26"}, {"l": "Apr-26", "v": 1.92, "fy": "fy26"}, {"l": "May-26", "v": 2.01, "fy": "fy26"}, {"l": "Jun-26", "v": 0.99, "fy": "fy26"}, {"l": "Jul-26", "v": 1.14, "fy": "fy27"}, {"l": "Aug-26", "v": 0.63, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.11, "fy": "fy27"}]}, {"code": "ACEL", "name": "AKIJ Consumer Electronics Limited (ORCA)", "category": "Consumer Electronics", "bu_id": 249, "gp": 0.2562, "rev_tgt": 125.73, "mktled_lo": 13.42, "mktled_hi": 13.42, "q": {"1": 0.081, "2": 0.195, "3": 0.309, "4": 0.415}, "note": "ORCA; 72% of target in Q3-Q4.", "cy_tot": 1.63, "py_tot": 0.0, "mr_tot": 1.63, "mp_tot": 0.42, "cy_mkt_tot": 0.09, "cy_intensity": 0.0531, "rev_ach": 0.1597, "rev_gap": 8.56, "mktled_gap": 1.73, "trend": null, "proj_base": 8.33, "proj_pess": 8.33, "projected_ach": 0.0662, "run_rate": 0.74, "required_run": 13.79, "status": {"tone": "amber", "label": "Growing but behind plan", "narrative": "Marketing revenue is positive (+1.6 Cr) but revenue is only 16% of the Q1 phased target.", "focus": "Scale the winning campaigns and widen distribution to lift run-rate toward target."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 0.848, "py": 0.0, "mr": 0.848}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.641, "py": 0.0, "mr": 0.641}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.138, "py": 0.0, "mr": 0.138}], "fc": [{"label": "Jul-26", "val": 0.85, "target": 3.39, "actual": true}, {"label": "Aug-26", "val": 0.64, "target": 3.39, "actual": true}, {"label": "Sep-26*", "val": 0.14, "target": 3.39, "actual": true}, {"label": "Oct-26", "val": 0.74, "target": 8.17, "actual": false}, {"label": "Nov-26", "val": 0.74, "target": 8.17, "actual": false}, {"label": "Dec-26", "val": 0.74, "target": 8.17, "actual": false}, {"label": "Jan-27", "val": 0.74, "target": 12.95, "actual": false}, {"label": "Feb-27", "val": 0.74, "target": 12.95, "actual": false}, {"label": "Mar-27", "val": 0.74, "target": 12.95, "actual": false}, {"label": "Apr-27", "val": 0.74, "target": 17.39, "actual": false}, {"label": "May-27", "val": 0.74, "target": 17.39, "actual": false}, {"label": "Jun-27", "val": 0.74, "target": 17.39, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.0, "fy": "fy26"}, {"l": "Feb-26", "v": 0.92, "fy": "fy26"}, {"l": "Mar-26", "v": 0.71, "fy": "fy26"}, {"l": "Apr-26", "v": 0.87, "fy": "fy26"}, {"l": "May-26", "v": 1.14, "fy": "fy26"}, {"l": "Jun-26", "v": 0.9, "fy": "fy26"}, {"l": "Jul-26", "v": 0.85, "fy": "fy27"}, {"l": "Aug-26", "v": 0.64, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.14, "fy": "fy27"}]}, {"code": "AALL", "name": "AKIJ AgriLife Limited", "category": "Crop Protection", "bu_id": 250, "gp": 0.0, "rev_tgt": 97.5, "mktled_lo": 30, "mktled_hi": 40, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "AgriLife; target range 85-110 Cr (mid 97.5).", "cy_tot": 0.0, "py_tot": 0.0, "mr_tot": 0.0, "mp_tot": 0.0, "cy_mkt_tot": 0.02, "cy_intensity": 0.0, "rev_ach": 0.0, "rev_gap": 24.38, "mktled_gap": 8.75, "trend": null, "proj_base": 0.0, "proj_pess": 0.0, "projected_ach": 0.0, "run_rate": 0.0, "required_run": 10.83, "status": {"tone": "grey", "label": "Launch phase", "narrative": "No material revenue to date — the business is in launch/seed phase, so marketing is about building the brand, channel and pipeline rather than revenue conversion.", "focus": "Set up distribution & routes, launch GTM, seed demand; monitor early sell-out and pipeline build."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 0.0, "py": 0.0, "mr": 0.0}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.0, "py": 0.0, "mr": 0.0}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.0, "py": 0.0, "mr": 0.0}], "fc": [{"label": "Jul-26", "val": 0.0, "target": 8.12, "actual": true}, {"label": "Aug-26", "val": 0.0, "target": 8.12, "actual": true}, {"label": "Sep-26*", "val": 0.0, "target": 8.12, "actual": true}, {"label": "Oct-26", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Nov-26", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Dec-26", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Jan-27", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Feb-27", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Mar-27", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Apr-27", "val": 0.0, "target": 8.12, "actual": false}, {"label": "May-27", "val": 0.0, "target": 8.12, "actual": false}, {"label": "Jun-27", "val": 0.0, "target": 8.12, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.0, "fy": "fy26"}, {"l": "Feb-26", "v": 0.0, "fy": "fy26"}, {"l": "Mar-26", "v": 0.0, "fy": "fy26"}, {"l": "Apr-26", "v": 0.0, "fy": "fy26"}, {"l": "May-26", "v": 0.0, "fy": "fy26"}, {"l": "Jun-26", "v": 0.0, "fy": "fy26"}, {"l": "Jul-26", "v": 0.0, "fy": "fy27"}, {"l": "Aug-26", "v": 0.0, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.0, "fy": "fy27"}]}, {"code": "ALML", "name": "Akij Landmark Limited", "category": "Real Estate", "bu_id": 244, "gp": 0.0, "rev_tgt": 77.34, "mktled_lo": 77.34, "mktled_hi": 77.34, "q": {"1": 0.165, "2": 0.24, "3": 0.249, "4": 0.346}, "note": "Landmark; H2 59% of target.", "cy_tot": 0.0, "py_tot": 0.0, "mr_tot": 0.0, "mp_tot": 0.0, "cy_mkt_tot": 0.0, "cy_intensity": 0.0, "rev_ach": 0.0, "rev_gap": 12.76, "mktled_gap": 19.34, "trend": null, "proj_base": 0.0, "proj_pess": 0.0, "projected_ach": 0.0, "run_rate": 0.0, "required_run": 8.59, "status": {"tone": "grey", "label": "Launch phase", "narrative": "No material revenue to date — the business is in launch/seed phase, so marketing is about building the brand, channel and pipeline rather than revenue conversion.", "focus": "Set up distribution & routes, launch GTM, seed demand; monitor early sell-out and pipeline build."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 0.0, "py": 0.0, "mr": 0.0}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.0, "py": 0.0, "mr": 0.0}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.0, "py": 0.0, "mr": 0.0}], "fc": [{"label": "Jul-26", "val": 0.0, "target": 4.25, "actual": true}, {"label": "Aug-26", "val": 0.0, "target": 4.25, "actual": true}, {"label": "Sep-26*", "val": 0.0, "target": 4.25, "actual": true}, {"label": "Oct-26", "val": 0.0, "target": 6.19, "actual": false}, {"label": "Nov-26", "val": 0.0, "target": 6.19, "actual": false}, {"label": "Dec-26", "val": 0.0, "target": 6.19, "actual": false}, {"label": "Jan-27", "val": 0.0, "target": 6.42, "actual": false}, {"label": "Feb-27", "val": 0.0, "target": 6.42, "actual": false}, {"label": "Mar-27", "val": 0.0, "target": 6.42, "actual": false}, {"label": "Apr-27", "val": 0.0, "target": 8.92, "actual": false}, {"label": "May-27", "val": 0.0, "target": 8.92, "actual": false}, {"label": "Jun-27", "val": 0.0, "target": 8.92, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.0, "fy": "fy26"}, {"l": "Feb-26", "v": 0.0, "fy": "fy26"}, {"l": "Mar-26", "v": 0.0, "fy": "fy26"}, {"l": "Apr-26", "v": 0.0, "fy": "fy26"}, {"l": "May-26", "v": 0.0, "fy": "fy26"}, {"l": "Jun-26", "v": 0.0, "fy": "fy26"}, {"l": "Jul-26", "v": 0.0, "fy": "fy27"}, {"l": "Aug-26", "v": 0.0, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.0, "fy": "fy27"}]}, {"code": "AAIL", "name": "AKIJ Automobile Industries Ltd. (Tyre)", "category": "Tyres", "bu_id": 238, "gp": 0.3039, "rev_tgt": 71.42, "mktled_lo": 17.82, "mktled_hi": 17.82, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "Tyre: Birla 21.66 / Aolong 36.95 / Armstrong 12.81.", "cy_tot": 10.6, "py_tot": 0.0, "mr_tot": 10.6, "mp_tot": 3.22, "cy_mkt_tot": 0.24, "cy_intensity": 0.0229, "rev_ach": 0.5936, "rev_gap": 7.26, "mktled_gap": -6.14, "trend": null, "proj_base": 52.61, "proj_pess": 52.61, "projected_ach": 0.7366, "run_rate": 4.67, "required_run": 6.76, "status": {"tone": "amber", "label": "Growing but behind plan", "narrative": "Marketing revenue is positive (+10.6 Cr) but revenue is only 59% of the Q1 phased target.", "focus": "Scale the winning campaigns and widen distribution to lift run-rate toward target."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 4.644, "py": 0.0, "mr": 4.644}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 4.692, "py": 0.0, "mr": 4.692}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 1.263, "py": 0.0, "mr": 1.263}], "fc": [{"label": "Jul-26", "val": 4.64, "target": 5.95, "actual": true}, {"label": "Aug-26", "val": 4.69, "target": 5.95, "actual": true}, {"label": "Sep-26*", "val": 1.26, "target": 5.95, "actual": true}, {"label": "Oct-26", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Nov-26", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Dec-26", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Jan-27", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Feb-27", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Mar-27", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Apr-27", "val": 4.67, "target": 5.95, "actual": false}, {"label": "May-27", "val": 4.67, "target": 5.95, "actual": false}, {"label": "Jun-27", "val": 4.67, "target": 5.95, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.64, "fy": "fy26"}, {"l": "Feb-26", "v": 0.73, "fy": "fy26"}, {"l": "Mar-26", "v": 2.6, "fy": "fy26"}, {"l": "Apr-26", "v": 2.73, "fy": "fy26"}, {"l": "May-26", "v": 2.88, "fy": "fy26"}, {"l": "Jun-26", "v": 5.07, "fy": "fy26"}, {"l": "Jul-26", "v": 4.64, "fy": "fy27"}, {"l": "Aug-26", "v": 4.69, "fy": "fy27"}, {"l": "Sep-26*", "v": 1.26, "fy": "fy27"}]}, {"code": "AMQL", "name": "AKIJ Mediquip Ltd.", "category": "Healthcare Devices", "bu_id": 259, "gp": 0.0, "rev_tgt": 58.65, "mktled_lo": 10, "mktled_hi": 10, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "Pre-launch; gloves 44.2% of plan.", "cy_tot": 0.0, "py_tot": 0.0, "mr_tot": 0.0, "mp_tot": 0.0, "cy_mkt_tot": 0.0, "cy_intensity": 0.0, "rev_ach": 0.0, "rev_gap": 14.66, "mktled_gap": 2.5, "trend": null, "proj_base": 0.0, "proj_pess": 0.0, "projected_ach": 0.0, "run_rate": 0.0, "required_run": 6.52, "status": {"tone": "grey", "label": "Launch phase", "narrative": "No material revenue to date — the business is in launch/seed phase, so marketing is about building the brand, channel and pipeline rather than revenue conversion.", "focus": "Set up distribution & routes, launch GTM, seed demand; monitor early sell-out and pipeline build."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 0.0, "py": 0.0, "mr": 0.0}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.0, "py": 0.0, "mr": 0.0}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.0, "py": 0.0, "mr": 0.0}], "fc": [{"label": "Jul-26", "val": 0.0, "target": 4.89, "actual": true}, {"label": "Aug-26", "val": 0.0, "target": 4.89, "actual": true}, {"label": "Sep-26*", "val": 0.0, "target": 4.89, "actual": true}, {"label": "Oct-26", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Nov-26", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Dec-26", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Jan-27", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Feb-27", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Mar-27", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Apr-27", "val": 0.0, "target": 4.89, "actual": false}, {"label": "May-27", "val": 0.0, "target": 4.89, "actual": false}, {"label": "Jun-27", "val": 0.0, "target": 4.89, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.0, "fy": "fy26"}, {"l": "Feb-26", "v": 0.0, "fy": "fy26"}, {"l": "Mar-26", "v": 0.0, "fy": "fy26"}, {"l": "Apr-26", "v": 0.0, "fy": "fy26"}, {"l": "May-26", "v": 0.0, "fy": "fy26"}, {"l": "Jun-26", "v": 0.0, "fy": "fy26"}, {"l": "Jul-26", "v": 0.0, "fy": "fy27"}, {"l": "Aug-26", "v": 0.0, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.0, "fy": "fy27"}]}, {"code": "ACL", "name": "Akij Commodities Ltd. (OASIS)", "category": "Commodities", "bu_id": 221, "gp": -0.1085, "rev_tgt": 36.61, "mktled_lo": 36, "mktled_hi": 36, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "OASIS; GT 85% of plan. Commodity wind-down.", "cy_tot": 27.67, "py_tot": 164.48, "mr_tot": -136.81, "mp_tot": 14.84, "cy_mkt_tot": 0.03, "cy_intensity": 0.001, "rev_ach": 3.0237, "rev_gap": -18.52, "mktled_gap": 145.81, "trend": -0.8317517230308767, "proj_base": 92.68, "proj_pess": 414.06, "projected_ach": 2.5316, "run_rate": 13.57, "required_run": 0.99, "status": {"tone": "red", "label": "Contracting (wind-down)", "narrative": "OASIS revenue is declining sharply vs prior year and the business carries a negative margin. Marketing is defending a shrinking, loss-making base.", "focus": "Decide the category strategy — protect only the profitable GT lines; exit or repurpose the rest."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 22.032, "py": 101.001, "mr": -78.969}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 5.108, "py": 53.973, "mr": -48.866}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.534, "py": 9.509, "mr": -8.975}], "fc": [{"label": "Jul-26", "val": 22.03, "target": 3.05, "actual": true}, {"label": "Aug-26", "val": 5.11, "target": 3.05, "actual": true}, {"label": "Sep-26*", "val": 0.53, "target": 3.05, "actual": true}, {"label": "Oct-26", "val": 8.12, "target": 3.05, "actual": false}, {"label": "Nov-26", "val": 10.94, "target": 3.05, "actual": false}, {"label": "Dec-26", "val": 12.55, "target": 3.05, "actual": false}, {"label": "Jan-27", "val": 5.96, "target": 3.05, "actual": false}, {"label": "Feb-27", "val": 10.53, "target": 3.05, "actual": false}, {"label": "Mar-27", "val": 9.37, "target": 3.05, "actual": false}, {"label": "Apr-27", "val": 5.38, "target": 3.05, "actual": false}, {"label": "May-27", "val": 0.77, "target": 3.05, "actual": false}, {"label": "Jun-27", "val": 1.38, "target": 3.05, "actual": false}], "traj": [{"l": "Jul-25", "v": 101.0, "fy": "fy26"}, {"l": "Aug-25", "v": 53.97, "fy": "fy26"}, {"l": "Sep-25", "v": 41.17, "fy": "fy26"}, {"l": "Oct-25", "v": 48.25, "fy": "fy26"}, {"l": "Nov-25", "v": 65.02, "fy": "fy26"}, {"l": "Dec-25", "v": 74.62, "fy": "fy26"}, {"l": "Jan-26", "v": 35.44, "fy": "fy26"}, {"l": "Feb-26", "v": 62.6, "fy": "fy26"}, {"l": "Mar-26", "v": 55.68, "fy": "fy26"}, {"l": "Apr-26", "v": 31.99, "fy": "fy26"}, {"l": "May-26", "v": 4.6, "fy": "fy26"}, {"l": "Jun-26", "v": 8.17, "fy": "fy26"}, {"l": "Jul-26", "v": 22.03, "fy": "fy27"}, {"l": "Aug-26", "v": 5.11, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.53, "fy": "fy27"}]}, {"code": "AMPL", "name": "Akij Mediplex Limited", "category": "Diagnostics", "bu_id": 255, "gp": 1.0, "rev_tgt": 15.38, "mktled_lo": 7, "mktled_hi": 7, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "Mirpur; lab+radiology ~95% of revenue.", "cy_tot": 0.29, "py_tot": 0.0, "mr_tot": 0.29, "mp_tot": 0.29, "cy_mkt_tot": 0.13, "cy_intensity": 0.4428, "rev_ach": 0.0746, "rev_gap": 3.56, "mktled_gap": 1.46, "trend": null, "proj_base": 1.35, "proj_pess": 1.35, "projected_ach": 0.0875, "run_rate": 0.12, "required_run": 1.68, "status": {"tone": "amber", "label": "Growing but behind plan", "narrative": "Marketing revenue is positive (+0.3 Cr) but revenue is only 7% of the Q1 phased target.", "focus": "Scale the winning campaigns and widen distribution to lift run-rate toward target."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 0.088, "py": 0.0, "mr": 0.088}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.147, "py": 0.0, "mr": 0.147}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.052, "py": 0.0, "mr": 0.052}], "fc": [{"label": "Jul-26", "val": 0.09, "target": 1.28, "actual": true}, {"label": "Aug-26", "val": 0.15, "target": 1.28, "actual": true}, {"label": "Sep-26*", "val": 0.05, "target": 1.28, "actual": true}, {"label": "Oct-26", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Nov-26", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Dec-26", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Jan-27", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Feb-27", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Mar-27", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Apr-27", "val": 0.12, "target": 1.28, "actual": false}, {"label": "May-27", "val": 0.12, "target": 1.28, "actual": false}, {"label": "Jun-27", "val": 0.12, "target": 1.28, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.0, "fy": "fy26"}, {"l": "Feb-26", "v": 0.0, "fy": "fy26"}, {"l": "Mar-26", "v": 0.0, "fy": "fy26"}, {"l": "Apr-26", "v": 0.0, "fy": "fy26"}, {"l": "May-26", "v": 0.0, "fy": "fy26"}, {"l": "Jun-26", "v": 0.03, "fy": "fy26"}, {"l": "Jul-26", "v": 0.09, "fy": "fy27"}, {"l": "Aug-26", "v": 0.15, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.05, "fy": "fy27"}]}, {"code": "NJL", "name": "Nextjobz Limited", "category": "HR-Tech", "bu_id": 252, "gp": 1.0, "rev_tgt": 5.04, "mktled_lo": 1.39, "mktled_hi": 1.39, "q": {"1": 0.25, "2": 0.25, "3": 0.25, "4": 0.25}, "note": "FY25-26 marketing productivity negative.", "cy_tot": 0.35, "py_tot": 0.0, "mr_tot": 0.35, "mp_tot": 0.35, "cy_mkt_tot": 1.14, "cy_intensity": 3.2677, "rev_ach": 0.2761, "rev_gap": 0.91, "mktled_gap": -0.0, "trend": null, "proj_base": 1.89, "proj_pess": 1.89, "projected_ach": 0.3751, "run_rate": 0.17, "required_run": 0.52, "status": {"tone": "red", "label": "Small base / unproven", "narrative": "Revenue is tiny relative to spend and prior-year productivity was negative.", "focus": "Cap spend until product-market fit and attributable conversions are proven."}, "pairs": [{"cl": "Jul-26", "pl": "Jul-25", "cy": 0.159, "py": 0.0, "mr": 0.159}, {"cl": "Aug-26", "pl": "Aug-25", "cy": 0.183, "py": 0.0, "mr": 0.183}, {"cl": "Sep-26 (MTD)", "pl": "Sep-25 (MTD)", "cy": 0.005, "py": 0.0, "mr": 0.005}], "fc": [{"label": "Jul-26", "val": 0.16, "target": 0.42, "actual": true}, {"label": "Aug-26", "val": 0.18, "target": 0.42, "actual": true}, {"label": "Sep-26*", "val": 0.01, "target": 0.42, "actual": true}, {"label": "Oct-26", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Nov-26", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Dec-26", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Jan-27", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Feb-27", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Mar-27", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Apr-27", "val": 0.17, "target": 0.42, "actual": false}, {"label": "May-27", "val": 0.17, "target": 0.42, "actual": false}, {"label": "Jun-27", "val": 0.17, "target": 0.42, "actual": false}], "traj": [{"l": "Jul-25", "v": 0.0, "fy": "fy26"}, {"l": "Aug-25", "v": 0.0, "fy": "fy26"}, {"l": "Sep-25", "v": 0.0, "fy": "fy26"}, {"l": "Oct-25", "v": 0.0, "fy": "fy26"}, {"l": "Nov-25", "v": 0.0, "fy": "fy26"}, {"l": "Dec-25", "v": 0.0, "fy": "fy26"}, {"l": "Jan-26", "v": 0.01, "fy": "fy26"}, {"l": "Feb-26", "v": 0.03, "fy": "fy26"}, {"l": "Mar-26", "v": 0.02, "fy": "fy26"}, {"l": "Apr-26", "v": 0.06, "fy": "fy26"}, {"l": "May-26", "v": 0.02, "fy": "fy26"}, {"l": "Jun-26", "v": 0.1, "fy": "fy26"}, {"l": "Jul-26", "v": 0.16, "fy": "fy27"}, {"l": "Aug-26", "v": 0.18, "fy": "fy27"}, {"l": "Sep-26*", "v": 0.01, "fy": "fy27"}]}]};
+const {meta, sbus} = DATA;
+
+const $=s=>document.querySelector(s);
+const CL={green:'#34d399',amber:'#fbbf24',red:'#f87171',blue:'#38bdf8',grey:'#7d8aa6',indigo:'#6366f1',cyan:'#22d3ee'};
+
+Chart.defaults.color='#8b98b8';
+Chart.defaults.borderColor='rgba(255,255,255,.06)';
+Chart.defaults.font.family='Inter';
+Chart.defaults.font.size=11;
+
+function fmtCr(v){if(v==null)return '—';const a=Math.abs(v);const d=a>=100?0:(a>=1?1:2);return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fmtPct(v){if(v==null)return '—';return (v*100).toFixed(1)+'%';}
+function fmtSign(v){if(v==null)return '—';return (v>=0?'+':'')+fmtCr(v);}
+function pctTone(v){return v>=.9?'green':(v>=.6?'amber':'red');}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- KPIs ---------- */
+function renderKPIs(){
+  const k=[
+    {l:'FY27 Revenue Target',v:fmtCr(meta.total_rev),s:'16 SBUs',c:''},
+    {l:'Q1 Revenue (to-date)',v:fmtCr(meta.total_cy),s:'Jul+Aug+Sep (9d MTD)',c:''},
+    {l:'Q1 Achievement',v:fmtPct(meta.total_cy_ach),s:'vs Q1 phased target',c:pctTone(meta.total_cy_ach)},
+    {l:'Marketing Revenue',v:fmtSign(meta.total_mr),s:'CY − PY, like-for-like',c:meta.total_mr>=0?'g':''},
+    {l:'Marketing Profit',v:fmtSign(meta.total_mp),s:'at FY26 gross margin',c:meta.total_mp>=0?'g':''},
+    {l:'Projected FY27',v:fmtCr(meta.total_proj),s:'current trend held',c:'b'},
+    {l:'Projected Ach.',v:fmtPct(meta.total_proj_ach),s:'vs 9,111 Cr target',c:pctTone(meta.total_proj_ach)},
+  ];
+  $('#kpis').innerHTML=k.map(x=>`<div class="kpi ${x.c}"><div class="lbl">${x.l}</div><div class="val num">${x.v}</div><div class="sub">${x.s}</div></div>`).join('');
+}
+
+/* ---------- Tabs ---------- */
+const tabs=[...document.querySelectorAll('.tab')];
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  document.querySelectorAll('section.pane').forEach(p=>p.classList.remove('active'));
+  $('#tab-'+t.dataset.t).classList.add('active');
+  if(t.dataset.t==='forecast') renderForecast();
+  if(t.dataset.t==='detail') renderDetail();
+}));
+
+/* ---------- Overview table ---------- */
+let sortKey=null,sortDir=1;
+function renderTable(){
+  const arr=[...sbus].sort((a,b)=>{
+    if(!sortKey) return b.rev_tgt-a.rev_tgt;
+    let av=a[sortKey],bv=b[sortKey];
+    if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();return av<bv?-1*sortDir:av>bv?1*sortDir:0;}
+    return (av-bv)*sortDir;
+  });
+  $('#pbody').innerHTML=arr.map(x=>{
+    const st=x.status;
+    return `<tr class="click" data-code="${x.code}">
+      <td><b>${esc(x.name)}</b> <span class="mut">${x.code}</span></td>
+      <td class="mut">${esc(x.category)}</td>
+      <td class="num">${fmtCr(x.rev_tgt)}</td>
+      <td class="num">${fmtCr(x.cy_tot)}</td>
+      <td><span class="pill ${pctTone(x.rev_ach)}">${fmtPct(x.rev_ach)}</span></td>
+      <td class="num ${x.mr_tot>=0?'pos':'neg'}">${fmtSign(x.mr_tot)}</td>
+      <td class="num ${x.mp_tot>=0?'pos':'neg'}">${fmtSign(x.mp_tot)}</td>
+      <td class="num">${fmtCr(x.cy_mkt_tot)}</td>
+      <td class="num mut">${fmtPct(x.cy_intensity)}</td>
+      <td class="num">${fmtCr(x.proj_base)}</td>
+      <td><span class="pill ${pctTone(x.projected_ach)}">${fmtPct(x.projected_ach)}</span></td>
+      <td><span class="pill ${st.tone}">${esc(st.label)}</span></td>
+    </tr>`;
+  }).join('');
+  document.querySelectorAll('#pbody tr').forEach(tr=>tr.addEventListener('click',()=>{
+    currentSBU=tr.dataset.code; syncSelect(); switchToDetail();
+  }));
+}
+document.querySelectorAll('#ptable th').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.k; if(!k)return;
+  if(sortKey===k){sortDir*=-1;}else{sortKey=k;sortDir=1;}
+  renderTable();
+}));
+
+/* ---------- Overview charts ---------- */
+let ovc={};
+function chartBar(id,labels,data,colors,axis='x',title='BDT Crore'){
+  const isH=axis==='y';
+  const cfg={type:isH?'bar':'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:4,barThickness:'flex'}]},
+    options:{indexAxis:isH?'y':'x',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.x)}}},
+      scales:{x:{grid:{display:false},ticks:{callback:v=>fmtCr(v)}},y:{grid:{display:!isH}}}
+  }};
+  if(isH){cfg.options.scales={x:{grid:{display:true}},y:{grid:{display:false}}};}
+  return new Chart($(id),cfg);
+}
+function renderOverview(){
+  const r1=sbus.map(x=>({x:x.code,v:x.rev_ach,c:CL[pctTone(x.rev_ach)]}));
+  if(ovc.a)ovc.a.destroy();
+  ovc.a=new Chart($('#ovAch'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:r1.map(x=>x.v),backgroundColor:r1.map(x=>x.c),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>' '+fmtPct(c.parsed.x)}}},
+      scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
+  const mr=sbus.map(x=>x.mr_tot);
+  if(ovc.b)ovc.b.destroy();
+  ovc.b=new Chart($('#ovMr'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:mr,backgroundColor:mr.map(v=>v>=0?CL.green:CL.red),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
+  const pr=sbus.map(x=>({v:x.projected_ach,c:CL[pctTone(x.projected_ach)]}));
+  if(ovc.c)ovc.c.destroy();
+  ovc.c=new Chart($('#ovProj'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:pr.map(x=>x.v),backgroundColor:pr.map(x=>x.c),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtPct(c.parsed.x)}}},
+      scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
+  if(ovc.d)ovc.d.destroy();
+  const spend=sbus.map(x=>x.cy_mkt_tot);
+  ovc.d=new Chart($('#ovSpend'),{type:'doughnut',data:{labels:sbus.map(x=>x.name),datasets:[{data:spend,backgroundColor:sbus.map(x=>'hsl('+((sbus.indexOf(x)*137)%360)+',60%,55%)'),borderColor:'#101828',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}}}}});
+}
+
+/* ---------- Forecast ---------- */
+let fcc={};
+const quadrant={id:'quadrant',beforeDatasetsDraw(chart){
+  const {ctx,scales:{x,y}}=chart; if(!x||!y)return;
+  ctx.save();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.setLineDash([5,5]);ctx.lineWidth=1;
+  const vx=x.getPixelForValue(1.0),vy=y.getPixelForValue(1.0);
+  ctx.beginPath();ctx.moveTo(vx,y.top);ctx.lineTo(vx,y.bottom);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x.left,vy);ctx.lineTo(x.right,vy);ctx.stroke();ctx.restore();
+}};
+function renderForecast(){
+  if(fcc.m)Object.values(fcc).forEach(c=>c.destroy&&c.destroy()); fcc={};
+  const M=meta.months;
+  const cols=M.map(m=>m.actual?CL.green:CL.blue);
+  fcc.m=new Chart($('#fcMonthly'),{type:'bar',data:{labels:M.map(m=>m.label),datasets:[
+    {type:'bar',label:'Revenue',data:M.map(m=>m.val),backgroundColor:cols,borderRadius:4,order:2},
+    {type:'line',label:'Target',data:M.map(m=>m.target),borderColor:'#94a3b8',borderDash:[5,5],pointRadius:0,tension:.25,order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
+
+  fcc.b=new Chart($('#fcBar'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[
+    {label:'Target',data:sbus.map(x=>x.rev_tgt),backgroundColor:'#33415f',borderRadius:4},
+    {label:'Projected',data:sbus.map(x=>x.proj_base),backgroundColor:sbus.map(x=>CL[pctTone(x.projected_ach)]),borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
+
+  fcc.s=new Chart($('#fcScatter'),{type:'scatter',data:{datasets:[{label:'SBU',
+    data:sbus.map(x=>({x:x.rev_ach,y:x.projected_ach,r:Math.max(4,Math.min(20,Math.sqrt(x.rev_tgt)*1.2)),code:x.code,name:x.name,tone:x.status.tone})),
+    backgroundColor:sbus.map(x=>CL[pctTone(x.projected_ach)]),borderColor:'#070c18',borderWidth:1}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return ` ${d.name} — Q1 ${fmtPct(d.x)}, Proj ${fmtPct(d.y)}`;}}}},
+    scales:{x:{min:0,ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Q1 achievement'}},
+      y:{min:0,ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Projected achievement'}}}},
+    plugins:[quadrant]});
+}
+
+/* ---------- Detail ---------- */
+let currentSBU=sbus[0].code, dcc={};
+function sb(){return sbus.find(x=>x.code===currentSBU);}
+function syncSelect(){const s=sb();$('#sbuSelect').value=currentSBU;
+  $('#dName').textContent=s.name+' ('+s.code+')';
+  $('#dMeta').textContent=s.category+' · BU '+s.bu_id+' · GP '+fmtPct(s.gp)+' · Target '+fmtCr(s.rev_tgt)+' Cr';
+}
+function switchToDetail(){
+  tabs.forEach(x=>x.classList.remove('active'));
+  tabs.find(x=>x.dataset.t==='detail').classList.add('active');
+  document.querySelectorAll('section.pane').forEach(p=>p.classList.remove('active'));
+  $('#tab-detail').classList.add('active');
+  renderDetail();
+}
+function renderDetail(){
+  const s=sb(); syncSelect();
+  const st=s.status;
+  $('#dStatus').innerHTML=`<div class="sbu-head" style="margin-top:6px"><span class="pill ${st.tone}">${esc(st.label)}</span>
+    <span class="pill blue">Mkt-Led gap ${fmtSign(s.mktled_gap)} Cr</span>
+    <span class="pill ${s.trend!=null&&s.trend<0?'red':'blue'}">Q1 YoY ${s.trend==null?'n/a':fmtSign(s.trend*100).replace('%','')+'%'}</span></div>`;
+  $('#dVerdict').innerHTML=`<div class="verdict ${st.tone}"><div class="vt">${esc(st.label)}</div>
+    <div class="vn">${esc(st.narrative)}</div><div class="vn" style="margin-top:4px"><b style="color:var(--text)">Focus:</b> ${esc(st.focus)}</div></div>`;
+
+  $('#dMinis').innerHTML=[
+    ['FY27 Target',fmtCr(s.rev_tgt)+' Cr',''],['Q1 Revenue',fmtCr(s.cy_tot)+' Cr','vs '+fmtCr(s.rev_tgt*s.q[1])+' ph.'],
+    ['Q1 Ach',fmtPct(s.rev_ach),pctTone(s.rev_ach)],['Marketing Revenue',fmtSign(s.mr_tot)+' Cr',s.mr_tot>=0?'pos':'neg'],
+    ['Marketing Profit',fmtSign(s.mp_tot)+' Cr',s.mp_tot>=0?'pos':'neg'],['Mkt Spend',fmtCr(s.cy_mkt_tot)+' Cr',''],
+    ['Spend % Rev',fmtPct(s.cy_intensity),''],['Projected FY',fmtCr(s.proj_base)+' Cr',''],
+    ['Proj Ach',fmtPct(s.projected_ach),pctTone(s.projected_ach)],['Run-rate (Jul+Aug)',fmtCr(s.run_rate)+' Cr/mo','']
+  ].map(m=>`<div class="mini"><div class="ml">${m[0]}</div><div class="mv num ${m[2]}">${m[1]}</div></div>`).join('');
+
+  if(dcc.a)Object.values(dcc).forEach(c=>c.destroy); dcc={};
+
+  const fc=s.fc;
+  dcc.a=new Chart($('#dForecast'),{type:'bar',data:{labels:fc.map(m=>m.label),datasets:[
+    {type:'bar',label:'Revenue',data:fc.map(m=>m.val),backgroundColor:fc.map(m=>m.actual?CL.green:CL.blue),borderRadius:4,order:2},
+    {type:'line',label:'Target',data:fc.map(m=>m.target),borderColor:'#94a3b8',borderDash:[5,5],pointRadius:0,tension:.25,order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
+
+  dcc.b=new Chart($('#dCyPy'),{type:'bar',data:{labels:s.pairs.map(p=>p.cl.replace(' (MTD)','')),datasets:[
+    {label:'CY',data:s.pairs.map(p=>p.cy),backgroundColor:CL.green,borderRadius:4},
+    {label:'PY',data:s.pairs.map(p=>p.py),backgroundColor:'#33415f',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
+
+  dcc.c=new Chart($('#dMr'),{type:'bar',data:{labels:s.pairs.map(p=>p.cl.replace(' (MTD)','')),datasets:[{data:s.pairs.map(p=>p.mr),backgroundColor:s.pairs.map(p=>p.mr>=0?CL.green:CL.red),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.y)}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
+
+  dcc.d=new Chart($('#dTraj'),{type:'bar',data:{labels:s.traj.map(t=>t.l),datasets:[{data:s.traj.map(t=>t.v),backgroundColor:s.traj.map(t=>t.fy==='fy26'?CL.blue:CL.green),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.y)}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
+
+  const scen=[
+    {n:'Repeat FY26 (0% growth)',v:s.proj_pess,hl:false},
+    {n:'Current trend (Q1 YoY held)',v:s.proj_base,hl:true},
+    {n:'Plan (FY27 target)',v:s.rev_tgt,hl:false}
+  ];
+  $('#dScen').innerHTML=scen.map(r=>{
+    const ach=r.v/s.rev_tgt; const tone=pctTone(ach);
+    return `<tr class="${r.hl?'hl':''}"><td>${esc(r.n)}</td><td class="num">${fmtCr(r.v)}</td>
+      <td><span class="pill ${tone}">${fmtPct(ach)}</span></td>
+      <td class="mut">${ach>=1?'Above plan':(ach>=.6?'Gap to close':'Major gap')}</td></tr>`;
+  }).join('');
+}
+$('#sbuSelect').addEventListener('change',e=>{currentSBU=e.target.value;renderDetail();});
+$('#prevSbu').addEventListener('click',()=>{const i=sbus.findIndex(x=>x.code===currentSBU);currentSBU=sbus[(i-1+sbus.length)%sbus.length].code;renderDetail();});
+$('#nextSbu').addEventListener('click',()=>{const i=sbus.findIndex(x=>x.code===currentSBU);currentSBU=sbus[(i+1)%sbus.length].code;renderDetail();});
+
+/* ---------- init ---------- */
+$('#sbuSelect').innerHTML=sbus.map(x=>`<option value="${x.code}">${esc(x.name)} (${x.code})</option>`).join('');
+renderKPIs(); renderTable(); renderOverview();
+</script>
+</body>
+</html>
