@@ -135,6 +135,22 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
 .insight .t{font-weight:600;color:var(--text)}
 .insight.green{border-left-color:var(--green)} .insight.amber{border-left-color:var(--amber)}
 .insight.red{border-left-color:var(--red)} .insight.blue{border-left-color:var(--blue)}
+.alert{display:flex;gap:12px;align-items:flex-start;border:1px solid rgba(248,113,113,.35);background:linear-gradient(180deg,rgba(248,113,113,.10),rgba(248,113,113,.02));border-radius:var(--radius);padding:13px 16px;margin:0 0 16px;font-size:12.5px;color:#fecaca;line-height:1.5}
+.alert b{color:#fca5a5}
+.flag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid var(--border);margin:1px 2px}
+.flag.r{color:#fca5a5;border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
+.flag.a{color:#fcd34d;border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+.realloc{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:12px}
+.realloc .f{display:flex;flex-direction:column;gap:6px}
+.realloc label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.realloc select,.realloc input[type=range]{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px}
+.realloc select{min-width:200px}
+.realloc .ro{font-weight:800;font-family:'Sora';font-size:22px;color:var(--green)}
+.realloc .ro.neg{color:var(--red)}
+ul.notes{list-style:none;padding:0;margin:0}
+ul.notes li{padding:7px 0;border-bottom:1px dashed var(--border);font-size:12.5px;color:var(--muted)}
+ul.notes li:last-child{border-bottom:none}
+ul.notes b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -152,11 +168,14 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
 
 <div class="wrap">
   <div class="kpis" id="kpis"></div>
+  <div class="alert" id="globalAlert"></div>
 
   <nav class="tabs" id="tabs">
     <button class="tab active" data-t="overview">Overview</button>
     <button class="tab" data-t="forecast">Forecast</button>
     <button class="tab" data-t="efficiency">Efficiency</button>
+    <button class="tab" data-t="actions">Actions</button>
+    <button class="tab" data-t="warnings">Early Warnings</button>
     <button class="tab" data-t="detail">SBU Detail</button>
     <button class="tab" data-t="assumptions">Assumptions &amp; Method</button>
   </nav>
@@ -207,6 +226,11 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
       <div class="desc">Projected FY27 − target per SBU. Red = projected shortfall, green = projected surplus. The total (9,111 Cr target vs 7,515 Cr projected) concentrates in a handful of SBUs.</div>
       <div class="chart-box tall"><canvas id="fcGap"></canvas></div>
     </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Portfolio scenario band</h3>
+      <div class="desc">Where the full portfolio lands under three scenarios — repeat FY26 (0% growth), hold the current Q1 trend, or hit the plan. The spread is the planning risk.</div>
+      <div class="chart-box" style="height:220px"><canvas id="fcScen"></canvas></div>
+    </div>
   </section>
 
   <!-- EFFICIENCY -->
@@ -227,6 +251,17 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
     <div class="grid g2">
       <div class="card"><h3>Spend vs Marketing Revenue</h3><div class="desc">X = Q1 marketing spend, Y = marketing revenue (growth). Bubble = revenue target. Above the diagonal line = every Cr spent returns more than 1 Cr of growth.</div><div class="chart-box tall"><canvas id="efScatter"></canvas></div></div>
       <div class="card"><h3>Marketing Revenue per Cr Spend</h3><div class="desc">Green = efficient growth, red = spending in decline. SBUs with no meaningful spend are excluded.</div><div class="chart-box tall"><canvas id="efBar"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Reallocation Simulator — move spend from decline to growth</h3>
+      <div class="desc">Estimate the Marketing Revenue (growth) impact of moving spend from a "declining on spend" SBU to a "behind but growing" SBU, using each SBU's current Rev-per-Cr-spend.</div>
+      <div class="realloc">
+        <div class="f"><label>Move from (source)</label><select id="raFrom"></select></div>
+        <div class="f"><label>Move to (destination)</label><select id="raTo"></select></div>
+        <div class="f"><label>Amount: <output id="raVal">5</output> Cr</label><input type="range" id="raAmt" min="1" max="20" step="1" value="5"></div>
+        <div class="f"><label>Est. net growth impact</label><output class="ro" id="raResult">—</output></div>
+      </div>
+      <div class="desc" id="raNote"></div>
     </div>
   </section>
 
@@ -257,6 +292,52 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
       <h3>Scenario — where FY27 lands</h3>
       <div class="desc">Three projections: repeat FY26 (0% growth), hold the current Q1 trend, or hit the plan.</div>
       <table class="scenario"><thead><tr><th>Scenario</th><th>Projected FY27 (Cr)</th><th>Achievement</th><th>Signal</th></tr></thead><tbody id="dScen"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ACTIONS -->
+  <section class="pane" id="tab-actions">
+    <div class="card" style="margin-bottom:14px">
+      <h3>Decisions &amp; Actions — what the numbers force us to do</h3>
+      <div class="desc">Each SBU is mapped to a recommended move using Q1 achievement, YoY growth and marketing-efficiency class. Click a row to open its detail.</div>
+    </div>
+    <div class="grid g2" style="margin-bottom:14px">
+      <div class="card"><h3>Action mix</h3><div class="desc">How the 16 SBUs split across recommended moves.</div><div class="chart-box"><canvas id="acMix"></canvas></div></div>
+      <div class="card"><h3>Priority gap-closers</h3><div class="desc">Largest projected shortfalls (Cr vs plan) — where focused intervention moves the portfolio most.</div><div class="chart-box"><canvas id="acGap"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto"><table id="atable">
+        <thead><tr>
+          <th>SBU</th><th>Status</th><th>Q1 Ach</th><th>YoY</th><th>Efficiency</th><th>Gap (Cr)</th><th>Recommended move</th><th>Owner</th><th>Focus</th><th>Priority</th>
+        </tr></thead>
+        <tbody id="abody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- EARLY WARNINGS -->
+  <section class="pane" id="tab-warnings">
+    <div class="card" style="margin-bottom:14px">
+      <h3>Early Warnings — flags &amp; leading indicators</h3>
+      <div class="desc">Signals that anticipate the next month's report before it shows up as a revenue miss. Red = act now, amber = watch.</div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div style="overflow-x:auto"><table id="wtable">
+        <thead><tr><th>SBU</th><th>Warnings</th><th>Run-rate (Cr/mo)</th><th>Required (Cr/mo)</th><th>Lift needed</th></tr></thead>
+        <tbody id="wbody"></tbody>
+      </table></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Run-rate vs required run-rate</h3><div class="desc">What each SBU is doing now (Jul+Aug) vs what it must do monthly to hit plan. A gap = the pace to close.</div><div class="chart-box tall"><canvas id="wBurn"></canvas></div></div>
+      <div class="card"><h3>Data to add (needs new DWH extracts)</h3><div class="desc">Leading indicators that would make this predictive — scaffolded, pending a data pull.</div>
+        <ul class="notes">
+          <li><b>Order book / pipeline</b> — forward revenue visibility (open SO by SBU).</li>
+          <li><b>Channel sell-out &amp; outlet coverage</b> — demand-side health before sell-in.</li>
+          <li><b>Plant utilisation / capacity</b> — supply-constraint risk (esp. cement, steel).</li>
+          <li><b>Collections / DSO</b> — cash &amp; customer-health early signal.</li>
+          <li><b>Prior-month snapshot</b> — for a month-over-month status-change tracker.</li>
+        </ul>
+    </div>
     </div>
   </section>
 
@@ -336,6 +417,16 @@ function renderKPIs(){
   ];
   $('#kpis').innerHTML=k.map(x=>`<div class="kpi ${x.c}" title="${esc(x.t)}"><div class="lbl">${x.l}</div><div class="val num">${x.v}</div><div class="sub">${x.s}</div></div>`).join('');
 }
+function renderAlert(){
+  const negGp=sbus.filter(x=>x.gp<0).map(x=>x.code+' ('+fmtPct(x.gp)+' GP)');
+  const totGap=sbus.reduce((s,x)=>s+Math.min(0,x.proj_gap),0);
+  const lines=[
+    '<b>2 confirmations pending</b> — AEL FY27 target (1,985 Cr vs 3,235 Cr FY26 actual) and the portfolio total (9,111 Cr vs 7,129 Cr deck headline).',
+    ...(negGp.length?['<b>Negative FY26 gross margin:</b> '+negGp.join(', ')+' — Marketing Profit is not meaningful there.']:[]),
+    '<b>Portfolio shortfall:</b> ≈ '+fmtCr(-totGap)+' Cr vs plan, concentrated in ACCL / AIL / ARMCL / ALEL.',
+  ];
+  $('#globalAlert').innerHTML='<div style="width:8px;align-self:stretch;border-radius:4px;background:linear-gradient(180deg,#f87171,#fbbf24)"></div><div>'+lines.join('<br>')+'</div>';
+}
 
 /* ---------- Tabs ---------- */
 const tabs=[...document.querySelectorAll('.tab')];
@@ -345,6 +436,8 @@ tabs.forEach(t=>t.addEventListener('click',()=>{
   $('#tab-'+t.dataset.t).classList.add('active');
   if(t.dataset.t==='forecast') renderForecast();
   if(t.dataset.t==='efficiency') renderEfficiency();
+  if(t.dataset.t==='actions') renderActions();
+  if(t.dataset.t==='warnings') renderWarnings();
   if(t.dataset.t==='detail') renderDetail();
 }));
 
@@ -636,6 +729,15 @@ function renderForecast(){
       label:c=>' '+(c.parsed.x>=0?'+':'')+fmtCr(c.parsed.x)+' Cr vs plan',
       footer:it=>sbuForecastReason(sbus[it[0].dataIndex])}}},
       scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
+  const sPess=sbus.reduce((s,x)=>s+x.proj_pess,0);
+  const sBase=sbus.reduce((s,x)=>s+x.proj_base,0);
+  const sPlan=sbus.reduce((s,x)=>s+x.rev_tgt,0);
+  fcc.scen=new Chart($('#fcScen'),{type:'bar',data:{labels:['Repeat FY26','Current trend','Plan (target)'],datasets:[{data:[sPess,sBase,sPlan],backgroundColor:['#33415f',CL.blue,CL.green],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+fmtCr(c.parsed.y)+' Cr',
+      footer:it=>{const i=it[0].dataIndex;return i===0?['Pessimistic — every SBU repeats FY26 H2 with 0% growth']:i===1?['Base — each SBU holds its current Q1 trend','≈ '+fmtPct(sBase/sPlan)+' of plan']:['Plan — full '+fmtCr(sPlan)+' Cr target delivered'];}}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 }
 
 /* ---------- Detail ---------- */
@@ -819,9 +921,113 @@ document.querySelectorAll('#etable th').forEach(th=>th.addEventListener('click',
   renderEfficiency();
 }));
 
+/* ---------- Actions ---------- */
+let acc={};
+function actionFor(x){
+  const cls=effClass(x);
+  const preLaunch=x.cy_tot<0.05 || (x.trend==null && x.run_rate<=0.5);
+  const behind=x.rev_ach<0.9, growing=x.mr_tot>=0;
+  if(preLaunch) return {move:'Build launch/ramp plan',owner:'SBU lead + Marketing',focus:'Milestones, distribution, first revenue — de-risk the flat/zero forecast',priority:'High',tone:'blue'};
+  if(cls.label==='Declining on spend') return {move:'Freeze & reallocate spend',owner:'Marketing + Finance',focus:'Stop funding decline; redeploy to behind-but-growing SBUs',priority:'Critical',tone:'red'};
+  if(behind && !growing) return {move:'Root-cause & fix first',owner:'Ops + Sales',focus:'Supply / GTM before more marketing — spend won\'t fix a shrinking base',priority:'Critical',tone:'red'};
+  if(behind && growing) return {move:'Fund & accelerate',owner:'Marketing + Sales',focus:'Best ROI — incremental spend converts into growth',priority:'High',tone:'amber'};
+  if(!behind && growing) return {move:'Protect & scale',owner:'SBU lead',focus:'Sustain share; pull forward FY28 ambition',priority:'Monitor',tone:'green'};
+  return {move:'Defend share',owner:'SBU lead',focus:'Arrest the decline; defend position',priority:'Monitor',tone:'amber'};
+}
+function renderActions(){
+  Object.values(acc).forEach(c=>c&&c.destroy()); acc={};
+  const w={Critical:0,High:1,Monitor:2};
+  const rows=sbus.map(x=>({x,a:actionFor(x)})).sort((p,q)=>(w[p.a.priority]-w[q.a.priority])||(p.x.proj_gap-q.x.proj_gap));
+  $('#abody').innerHTML=rows.map(({x,a})=>`<tr class="click" data-code="${x.code}" title="${sbuHover(x)}">
+    <td><b>${esc(x.name)}</b> <span class="mut">${x.code}</span></td>
+    <td><span class="pill ${x.status.tone}">${esc(x.status.label)}</span></td>
+    <td><span class="pill ${pctTone(x.rev_ach)}">${fmtPct(x.rev_ach)}</span></td>
+    <td class="num ${x.mr_tot>=0?'pos':'neg'}">${fmtSign(x.mr_tot)}</td>
+    <td><span class="pill ${effClass(x).tone}">${esc(effClass(x).label)}</span></td>
+    <td class="num ${x.proj_gap>=0?'pos':'neg'}">${fmtSign(x.proj_gap)}</td>
+    <td><b>${esc(a.move)}</b></td>
+    <td class="mut">${esc(a.owner)}</td>
+    <td class="mut">${esc(a.focus)}</td>
+    <td><span class="pill ${a.tone}">${a.priority}</span></td>
+  </tr>`).join('');
+  document.querySelectorAll('#abody tr').forEach(tr=>tr.addEventListener('click',()=>{currentSBU=tr.dataset.code;syncSelect();switchToDetail();}));
+
+  const counts={}; rows.forEach(({a})=>counts[a.move]=(counts[a.move]||0)+1);
+  const moves=Object.keys(counts);
+  acc.mix=new Chart($('#acMix'),{type:'doughnut',data:{labels:moves,datasets:[{data:moves.map(m=>counts[m]),backgroundColor:moves.map(m=>'hsl('+((moves.indexOf(m)*73)%360)+',60%,55%)'),borderColor:'#101828',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}},tooltip:{...TTF,callbacks:{label:c=>' '+c.parsed+' SBUs'}}}}});
+
+  const gaps=sbus.filter(x=>x.proj_gap<0).sort((a,b)=>a.proj_gap-b.proj_gap).slice(0,8);
+  acc.gap=new Chart($('#acGap'),{type:'bar',data:{labels:gaps.map(x=>x.code),datasets:[{data:gaps.map(x=>x.proj_gap),backgroundColor:gaps.map(()=>CL.red),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+fmtCr(c.parsed.x)+' Cr shortfall',
+      footer:it=>sbuForecastReason(gaps[it[0].dataIndex])}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+}
+
+/* ---------- Early Warnings ---------- */
+let wcc={};
+function flags(x){
+  const f=[];
+  if(x.rev_ach<0.9) f.push({t:'Behind plan',s:'r'});
+  if(effClass(x).label==='Declining on spend') f.push({t:'Declining on spend',s:'r'});
+  if(x.cy_tot<0.05 || (x.trend==null && x.run_rate<=0.5)) f.push({t:'Ramp / pre-launch',s:'a'});
+  if(x.run_rate>0.5 && x.required_run>0 && x.run_rate<x.required_run) f.push({t:'Burn gap',s:'a'});
+  if(x.mom!=null && x.mom<0) f.push({t:'MoM slowing',s:'a'});
+  if(x.gp<0) f.push({t:'Negative margin',s:'r'});
+  return f;
+}
+function renderWarnings(){
+  Object.values(wcc).forEach(c=>c&&c.destroy()); wcc={};
+  const rows=sbus.map(x=>{const fl=flags(x);const lift=x.run_rate>0.01?x.required_run/x.run_rate:null;return {x,fl,lift};});
+  $('#wbody').innerHTML=rows.map(({x,fl,lift})=>`<tr class="click" data-code="${x.code}" title="${sbuHover(x)}">
+    <td><b>${esc(x.name)}</b> <span class="mut">${x.code}</span></td>
+    <td>${fl.length?fl.map(f=>`<span class="flag ${f.s}">${esc(f.t)}</span>`).join(''):'<span class="mut">—</span>'}</td>
+    <td class="num">${fmtCr(x.run_rate)}</td>
+    <td class="num">${x.required_run>0?fmtCr(x.required_run):'—'}</td>
+    <td class="num ${lift==null?'mut':(lift>1.3?'neg':(lift>1?'warn':''))}">${lift==null?'—':lift.toFixed(1)+'×'}</td>
+  </tr>`).join('');
+  document.querySelectorAll('#wbody tr').forEach(tr=>tr.addEventListener('click',()=>{currentSBU=tr.dataset.code;syncSelect();switchToDetail();}));
+
+  const burn=rows.filter(r=>r.x.run_rate>0.5 && r.x.required_run>0);
+  wcc.burn=new Chart($('#wBurn'),{type:'bar',data:{labels:burn.map(r=>r.x.code),datasets:[
+    {label:'Current (Jul+Aug)',data:burn.map(r=>r.x.run_rate),backgroundColor:CL.green,borderRadius:4},
+    {label:'Required to hit plan',data:burn.map(r=>r.x.required_run),backgroundColor:'#33415f',borderRadius:4}
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+    label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.x),
+    footer:it=>{const r=burn[it[0].dataIndex];return [r.x.name+' must lift from '+fmtCr(r.x.run_rate)+' to '+fmtCr(r.x.required_run)+' Cr/mo — a '+(r.lift-1>=0?'+':'')+((r.lift-1)*100).toFixed(0)+'% faster pace'];}}}},
+    scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+}
+
+/* ---------- Reallocation simulator ---------- */
+function renderRealloc(){
+  const srcs=sbus.filter(x=>effClass(x).label==='Declining on spend');
+  const dsts=sbus.filter(x=>x.rev_ach<0.9 && x.mr_tot>=0 && x.cy_tot>=0.05);
+  $('#raFrom').innerHTML=(srcs.length?srcs.map(x=>`<option value="${x.code}">${esc(x.name)} (${x.code}) · ${(x.rev_per_spend>=0?'+':'')+x.rev_per_spend.toFixed(1)}×</option>`).join(''):'<option value="">No "declining on spend" SBU</option>');
+  $('#raTo').innerHTML=(dsts.length?dsts.map(x=>`<option value="${x.code}">${esc(x.name)} (${x.code}) · ${(x.rev_per_spend>=0?'+':'')+x.rev_per_spend.toFixed(1)}×</option>`).join(''):'<option value="">No "behind + growing" SBU</option>');
+  $('#raFrom').value=srcs[0]?srcs[0].code:'';
+  $('#raTo').value=dsts[0]?dsts[0].code:'';
+  reallocCalc();
+}
+function reallocCalc(){
+  const src=sbus.find(x=>x.code===$('#raFrom').value);
+  const dst=sbus.find(x=>x.code===$('#raTo').value);
+  const amt=+$('#raAmt').value; $('#raVal').textContent=amt;
+  const out=$('#raResult'), note=$('#raNote');
+  if(!src||!dst){out.textContent='—';out.className='ro';note.textContent='Select a source and a destination to estimate the impact.';return;}
+  const srcR=src.rev_per_spend||0, dstR=dst.rev_per_spend||0;
+  const net=amt*(dstR-srcR);
+  out.textContent=(net>=0?'+':'')+net.toFixed(1)+' Cr';
+  out.className='ro '+(net>=0?'':'neg');
+  note.innerHTML='Moving '+fmtCr(amt)+' Cr from '+esc(src.name)+' ('+src.code+') to '+esc(dst.name)+' ('+dst.code+') yields an estimated <b>'+(net>=0?'+':'')+net.toFixed(1)+' Cr</b> of incremental Marketing Revenue (growth), using each SBU\'s current Rev-per-Cr-spend. Assumes no diminishing returns or timing lag — treat as directional.';
+}
+$('#raFrom').addEventListener('change',reallocCalc);
+$('#raTo').addEventListener('change',reallocCalc);
+$('#raAmt').addEventListener('input',reallocCalc);
+
 /* ---------- init ---------- */
 $('#sbuSelect').innerHTML=sbus.map(x=>`<option value="${x.code}">${esc(x.name)} (${x.code})</option>`).join('');
-renderKPIs(); renderInsights(); renderTable(); renderOverview();
+renderKPIs(); renderAlert(); renderInsights(); renderTable(); renderOverview(); renderRealloc();
 </script>
 </body>
 </html>
