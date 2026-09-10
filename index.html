@@ -127,6 +127,14 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+.insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:4px 0 14px}
+.insight{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;border-left:3px solid var(--blue)}
+.insight h4{font-size:12px;font-weight:700;font-family:'Sora';color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.insight .big{font-size:20px;font-weight:800;font-family:'Sora';letter-spacing:-.02em;margin-bottom:3px}
+.insight p{font-size:11.5px;color:var(--muted);line-height:1.45}
+.insight .t{font-weight:600;color:var(--text)}
+.insight.green{border-left-color:var(--green)} .insight.amber{border-left-color:var(--amber)}
+.insight.red{border-left-color:var(--red)} .insight.blue{border-left-color:var(--blue)}
 </style>
 </head>
 <body>
@@ -155,6 +163,7 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
 
   <!-- OVERVIEW -->
   <section class="pane active" id="tab-overview">
+    <div class="insights" id="insights"></div>
     <div class="card" style="margin-bottom:14px">
       <h3>Portfolio — Marketing Performance &amp; Year-End Projection</h3>
       <div class="desc">16 SBUs. Click any row to open its SBU detail. Click a column header to sort.</div>
@@ -173,7 +182,11 @@ footer{margin:40px 0 26px;text-align:center;color:var(--faint);font-size:11.5px}
     <div class="grid g2">
       <div class="card"><h3>Q1 Revenue Achievement by SBU</h3><div class="desc">vs Q1 phased target (RAG: ≥90% green, 60-90% amber, &lt;60% red)</div><div class="chart-box"><canvas id="ovAch"></canvas></div></div>
       <div class="card"><h3>Marketing Revenue by SBU</h3><div class="desc">CY − PY (like-for-like). Green = growth, red = below prior year.</div><div class="chart-box"><canvas id="ovMr"></canvas></div></div>
+      <div class="card"><h3>Marketing Profit by SBU</h3><div class="desc">Marketing Revenue × FY26 gross margin. Green = positive contribution.</div><div class="chart-box"><canvas id="ovMp"></canvas></div></div>
       <div class="card"><h3>Projected FY27 Achievement by SBU</h3><div class="desc">Where each SBU lands if the current trend holds for the next 9 months.</div><div class="chart-box"><canvas id="ovProj"></canvas></div></div>
+      <div class="card"><h3>Target vs Projected FY27 (Cr)</h3><div class="desc">Absolute plan gap per SBU. Grey = target, coloured = current-trend projection.</div><div class="chart-box tall"><canvas id="ovTvP"></canvas></div></div>
+      <div class="card"><h3>Growth–Achievement Matrix</h3><div class="desc">X = Q1 achievement (vs phased target), Y = Q1 YoY growth. Lines at 100% / 0%. Bubble = revenue target.</div><div class="chart-box tall"><canvas id="ovMatrix"></canvas></div></div>
+      <div class="card"><h3>Category — Q1 vs Projected Achievement</h3><div class="desc">Portfolio aggregated by category. Solid = Q1 now, faded = projected year-end.</div><div class="chart-box"><canvas id="ovCat"></canvas></div></div>
       <div class="card"><h3>Marketing Spend Share</h3><div class="desc">Share of Q1-to-date marketing spend (GL 4210001).</div><div class="chart-box"><canvas id="ovSpend"></canvas></div></div>
     </div>
   </section>
@@ -383,6 +396,28 @@ function chartBar(id,labels,data,colors,axis='x',title='BDT Crore'){
   if(isH){cfg.options.scales={x:{grid:{display:true}},y:{grid:{display:false}}};}
   return new Chart($(id),cfg);
 }
+function renderInsights(){
+  const g=sbus.filter(x=>x.py_tot>1).map(x=>({c:x.code,g:x.mr_tot/x.py_tot})).sort((a,b)=>b.g-a.g);
+  const lag=sbus.filter(x=>x.cy_tot>=0.05).sort((a,b)=>a.rev_ach-b.rev_ach);
+  const gaps=sbus.filter(x=>x.proj_gap<0).sort((a,b)=>a.proj_gap-b.proj_gap);
+  const totSpend=sbus.reduce((s,x)=>s+x.cy_mkt_tot,0)||1;
+  const spendTop=[...sbus].sort((a,b)=>b.cy_mkt_tot-a.cy_mkt_tot).slice(0,3);
+  const cards=[];
+  if(g.length) cards.push({cls:'green',title:'Fastest growers · Q1 YoY',
+    big:g[0].c+' '+(g[0].g>=0?'+':'')+(g[0].g*100).toFixed(0)+'%',
+    body:'Top 3: '+g.slice(0,3).map(o=>`${o.c} ${(o.g>=0?'+':'')+(o.g*100).toFixed(0)}%`).join(' · ')});
+  if(lag.length) cards.push({cls:'red',title:'Behind plan · Q1 achievement',
+    big:lag[0].c+' '+(lag[0].rev_ach*100).toFixed(0)+'%',
+    body:'Bottom 3: '+lag.slice(0,3).map(o=>`${o.c} ${(o.rev_ach*100).toFixed(0)}%`).join(' · ')});
+  if(gaps.length) cards.push({cls:'amber',title:'Largest projected gaps',
+    big:'−'+fmtCr(-gaps[0].proj_gap)+' Cr',
+    body:gaps.slice(0,3).map(o=>`${o.c} ${fmtSign(o.proj_gap)} Cr`).join(' · ')});
+  cards.push({cls:'blue',title:'Marketing spend concentration',
+    big:(spendTop.reduce((s,x)=>s+x.cy_mkt_tot,0)/totSpend*100).toFixed(0)+'%',
+    body:'Top 3 ('+spendTop.map(x=>x.c).join(', ')+') hold '+(spendTop.reduce((s,x)=>s+x.cy_mkt_tot,0)/totSpend*100).toFixed(0)+'% of all marketing spend'});
+  $('#insights').innerHTML=cards.map(c=>`<div class="insight ${c.cls}"><h4>${c.title}</h4><div class="big num">${c.big}</div><p>${c.body}</p></div>`).join('');
+}
+
 function renderOverview(){
   const r1=sbus.map(x=>({x:x.code,v:x.rev_ach,c:CL[pctTone(x.rev_ach)]}));
   if(ovc.a)ovc.a.destroy();
@@ -397,11 +432,55 @@ function renderOverview(){
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.x)}}},
       scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
+  const mp=sbus.map(x=>x.mp_tot);
+  if(ovc.e)ovc.e.destroy();
+  ovc.e=new Chart($('#ovMp'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:mp,backgroundColor:mp.map(v=>v>=0?CL.green:CL.red),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
   const pr=sbus.map(x=>({v:x.projected_ach,c:CL[pctTone(x.projected_ach)]}));
   if(ovc.c)ovc.c.destroy();
   ovc.c=new Chart($('#ovProj'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:pr.map(x=>x.v),backgroundColor:pr.map(x=>x.c),borderRadius:4}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtPct(c.parsed.x)}}},
       scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
+  if(ovc.f)ovc.f.destroy();
+  ovc.f=new Chart($('#ovTvP'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[
+    {label:'Target',data:sbus.map(x=>x.rev_tgt),backgroundColor:'#33415f',borderRadius:4},
+    {label:'Projected',data:sbus.map(x=>x.proj_base),backgroundColor:sbus.map(x=>CL[pctTone(x.projected_ach)]),borderRadius:4}
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.x)}}},
+    scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
+
+  const matrixQ={id:'matrixQ',beforeDatasetsDraw(chart){
+    const {ctx,scales:{x,y}}=chart; if(!x||!y)return;
+    ctx.save();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.setLineDash([5,5]);ctx.lineWidth=1;
+    const px=x.getPixelForValue(1.0);ctx.beginPath();ctx.moveTo(px,y.top);ctx.lineTo(px,y.bottom);ctx.stroke();
+    const py=y.getPixelForValue(0);ctx.beginPath();ctx.moveTo(x.left,py);ctx.lineTo(x.right,py);ctx.stroke();ctx.restore();
+  }};
+  const md=sbus.filter(x=>x.py_tot>1 && x.cy_tot>=0.05).map(x=>({x:x.rev_ach,y:x.mr_tot/x.py_tot,
+    r:Math.max(4,Math.min(18,Math.sqrt(x.rev_tgt)*1.1)),code:x.code,name:x.name}));
+  if(ovc.g)ovc.g.destroy();
+  ovc.g=new Chart($('#ovMatrix'),{type:'scatter',data:{datasets:[{data:md,
+    backgroundColor:md.map(p=>p.x>=1?(p.y>=0?CL.green:CL.amber):(p.y>=0?CL.blue:CL.red)),borderColor:'#070c18',borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return ` ${d.name} — Ach ${fmtPct(d.x)}, YoY ${fmtSign(d.y*100).replace('%','')+'%'}`;}}}},
+      scales:{x:{min:0,ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Q1 achievement'}},
+        y:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Q1 YoY growth'}}}},
+    plugins:[matrixQ]});
+
+  const cats={}; sbus.forEach(x=>{(cats[x.category]=cats[x.category]||[]).push(x);});
+  const catAgg=Object.entries(cats).map(([cat,list])=>{
+    const target=list.reduce((s,x)=>s+x.rev_tgt,0);
+    const q1t=list.reduce((s,x)=>s+x.rev_tgt*x.q[1],0);
+    const cy=list.reduce((s,x)=>s+x.cy_tot,0);
+    const proj=list.reduce((s,x)=>s+x.proj_base,0);
+    return {cat,target,cy,proj,ach:q1t?cy/q1t:0,projAch:target?proj/target:0};
+  }).sort((a,b)=>b.target-a.target);
+  if(ovc.h)ovc.h.destroy();
+  ovc.h=new Chart($('#ovCat'),{type:'bar',data:{labels:catAgg.map(c=>c.cat),datasets:[
+    {label:'Q1',data:catAgg.map(c=>c.ach),backgroundColor:CL.blue,borderRadius:4},
+    {label:'Projected',data:catAgg.map(c=>c.projAch),backgroundColor:'rgba(99,102,241,.45)',borderRadius:4}
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtPct(c.parsed.x)}}},
+    scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   if(ovc.d)ovc.d.destroy();
   const spend=sbus.map(x=>x.cy_mkt_tot);
@@ -603,7 +682,7 @@ document.querySelectorAll('#etable th').forEach(th=>th.addEventListener('click',
 
 /* ---------- init ---------- */
 $('#sbuSelect').innerHTML=sbus.map(x=>`<option value="${x.code}">${esc(x.name)} (${x.code})</option>`).join('');
-renderKPIs(); renderTable(); renderOverview();
+renderKPIs(); renderInsights(); renderTable(); renderOverview();
 </script>
 </body>
 </html>
