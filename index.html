@@ -497,35 +497,84 @@ const quadrant={id:'quadrant',beforeDatasetsDraw(chart){
   ctx.beginPath();ctx.moveTo(vx,y.top);ctx.lineTo(vx,y.bottom);ctx.stroke();
   ctx.beginPath();ctx.moveTo(x.left,vy);ctx.lineTo(x.right,vy);ctx.stroke();ctx.restore();
 }};
+const TTF={footerFont:{size:11,weight:'500'},footerColor:'rgba(232,238,252,.62)',footerMarginTop:10,padding:12,titleFont:{weight:'700',size:12},boxPadding:4};
+
+function sbuForecastReason(x){
+  const lines=[];
+  if(x.trend!=null){
+    lines.push('Method: seasonal × Q1 YoY trend');
+    lines.push('Q1 YoY trend '+(x.trend>=0?'+':'')+(x.trend*100).toFixed(1)+'%  →  each remaining month = PY same-month × '+(1+x.trend).toFixed(3));
+  }else if(x.run_rate>0.5){
+    lines.push('Method: flat run-rate (ramp / new launch)');
+    lines.push('PY Q1 < 40% of CY Q1, so a YoY % is unreliable');
+    lines.push('Held flat at Jul+Aug run-rate of '+fmtCr(x.run_rate)+' Cr/mo');
+  }else{
+    lines.push('Pre-launch — no revenue basis to forecast yet');
+  }
+  lines.push('Q1 actual '+fmtCr(x.cy_tot)+' Cr  →  projected FY27 '+fmtCr(x.proj_base)+' Cr');
+  if(x.rev_tgt>0){
+    lines.push('Gap vs plan: '+fmtSign(x.proj_gap)+' Cr  ('+fmtPct(x.projected_ach)+' of target)');
+    if(x.required_run>0) lines.push('To hit plan it needs '+fmtCr(x.required_run)+' Cr/mo over the next 9 months');
+  }
+  return lines;
+}
+
 function renderForecast(){
   if(fcc.m)Object.values(fcc).forEach(c=>c.destroy&&c.destroy()); fcc={};
   const M=meta.months;
   const cols=M.map(m=>m.actual?CL.green:CL.blue);
+  const pMr=sbus.reduce((s,x)=>s+x.mr_tot,0), pPy=sbus.reduce((s,x)=>s+x.py_tot,0);
+  const pG=(pPy>0.01)?pMr/pPy:null;
+
+  const monthReason=i=>{
+    const m=M[i], lines=[];
+    if(m.actual){
+      lines.push('ACTUAL — GL 3010001 (Sales Local) + 3010002 (Sales Foreign), ÷1e7');
+      lines.push(m.label.indexOf('Sep')===0?'Sep is 9 days MTD (1–9 Sep 2026) vs like-for-like 1–9 Sep 2025':m.label+' fully closed');
+    }else{
+      lines.push('FORECAST — sum of 16 SBU projections');
+      lines.push('Per SBU: PY same-month × (1 + its Q1 YoY trend), or flat run-rate where ramping');
+      if(pG!=null) lines.push('Portfolio blended Q1 YoY: '+(pG>=0?'+':'')+(pG*100).toFixed(1)+'%');
+    }
+    lines.push('Target '+fmtCr(m.target)+' Cr  →  '+(m.val>=m.target?'ahead by':'short by')+' '+fmtCr(Math.abs(m.val-m.target))+' Cr');
+    return lines;
+  };
+
   fcc.m=new Chart($('#fcMonthly'),{type:'bar',data:{labels:M.map(m=>m.label),datasets:[
     {type:'bar',label:'Revenue',data:M.map(m=>m.val),backgroundColor:cols,borderRadius:4,order:2},
     {type:'line',label:'Target',data:M.map(m=>m.target),borderColor:'#94a3b8',borderDash:[5,5],pointRadius:0,tension:.25,order:1}
   ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+    plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+      label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y),
+      footer:it=>monthReason(it[0].dataIndex)}}},
     scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 
   fcc.b=new Chart($('#fcBar'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[
     {label:'Target',data:sbus.map(x=>x.rev_tgt),backgroundColor:'#33415f',borderRadius:4},
     {label:'Projected',data:sbus.map(x=>x.proj_base),backgroundColor:sbus.map(x=>CL[pctTone(x.projected_ach)]),borderRadius:4}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+    label:c=>{const x=sbus[c.dataIndex];return ' '+c.dataset.label+': '+fmtCr(c.parsed.y)+(c.dataset.label==='Projected'?'  ('+fmtPct(x.projected_ach)+' of target)':'');},
+    footer:it=>sbuForecastReason(sbus[it[0].dataIndex])}}},
     scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 
   fcc.s=new Chart($('#fcScatter'),{type:'scatter',data:{datasets:[{label:'SBU',
     data:sbus.map(x=>({x:x.rev_ach,y:x.projected_ach,r:Math.max(4,Math.min(20,Math.sqrt(x.rev_tgt)*1.2)),code:x.code,name:x.name,tone:x.status.tone})),
     backgroundColor:sbus.map(x=>CL[pctTone(x.projected_ach)]),borderColor:'#070c18',borderWidth:1}]
   },options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return ` ${d.name} — Q1 ${fmtPct(d.x)}, Proj ${fmtPct(d.y)}`;}}}},
+    plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>{const d=c.raw;return ` ${d.name} — Q1 ${fmtPct(d.x)} now, ${fmtPct(d.y)} projected year-end`;},
+      footer:it=>{const d=it[0].raw;return ['Bubble size = revenue target ('+fmtCr(sbus[it[0].dataIndex].rev_tgt)+' Cr)',
+        (d.x>=1?'On-plan in Q1':'Behind plan in Q1')+' · '+(d.y>=1?'on-plan at year-end':'missing year-end plan'),
+        ...sbuForecastReason(sbus[it[0].dataIndex])];}}}},
     scales:{x:{min:0,ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Q1 achievement'}},
       y:{min:0,ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Projected achievement'}}}},
     plugins:[quadrant]});
 
   const gap=sbus.map(x=>x.proj_gap);
   fcc.g=new Chart($('#fcGap'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:gap,backgroundColor:gap.map(v=>v>=0?CL.green:CL.red),borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtSign(c.parsed.x)+' Cr'}}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+(c.parsed.x>=0?'+':'')+fmtCr(c.parsed.x)+' Cr vs plan',
+      footer:it=>sbuForecastReason(sbus[it[0].dataIndex])}}},
       scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 }
 
