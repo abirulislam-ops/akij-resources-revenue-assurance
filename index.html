@@ -423,32 +423,37 @@ function renderOverview(){
   if(ovc.a)ovc.a.destroy();
   ovc.a=new Chart($('#ovAch'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:r1.map(x=>x.v),backgroundColor:r1.map(x=>x.c),borderRadius:4}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>' '+fmtPct(c.parsed.x)}}},
+      tooltip:{...TTF,callbacks:{label:c=>' '+fmtPct(c.parsed.x),footer:it=>achReason(sbus[it[0].dataIndex])}}},
       scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   const mr=sbus.map(x=>x.mr_tot);
   if(ovc.b)ovc.b.destroy();
   ovc.b=new Chart($('#ovMr'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:mr,backgroundColor:mr.map(v=>v>=0?CL.green:CL.red),borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.x)}}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{...TTF,callbacks:{label:c=>' '+fmtSign(c.parsed.x)+' Cr',footer:it=>mrReason(sbus[it[0].dataIndex])}}},
       scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   const mp=sbus.map(x=>x.mp_tot);
   if(ovc.e)ovc.e.destroy();
   ovc.e=new Chart($('#ovMp'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:mp,backgroundColor:mp.map(v=>v>=0?CL.green:CL.red),borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.x)}}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{...TTF,callbacks:{label:c=>' '+fmtSign(c.parsed.x)+' Cr',footer:it=>mpReason(sbus[it[0].dataIndex])}}},
       scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   const pr=sbus.map(x=>({v:x.projected_ach,c:CL[pctTone(x.projected_ach)]}));
   if(ovc.c)ovc.c.destroy();
   ovc.c=new Chart($('#ovProj'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[{data:pr.map(x=>x.v),backgroundColor:pr.map(x=>x.c),borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtPct(c.parsed.x)}}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{...TTF,callbacks:{label:c=>' '+fmtPct(c.parsed.x),footer:it=>sbuForecastReason(sbus[it[0].dataIndex])}}},
       scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   if(ovc.f)ovc.f.destroy();
   ovc.f=new Chart($('#ovTvP'),{type:'bar',data:{labels:sbus.map(x=>x.code),datasets:[
     {label:'Target',data:sbus.map(x=>x.rev_tgt),backgroundColor:'#33415f',borderRadius:4},
     {label:'Projected',data:sbus.map(x=>x.proj_base),backgroundColor:sbus.map(x=>CL[pctTone(x.projected_ach)]),borderRadius:4}
-  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.x)}}},
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+    label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.x)+(c.dataset.label==='Projected'?'  ('+fmtPct(sbus[c.dataIndex].projected_ach)+' of target)':''),
+    footer:it=>sbuForecastReason(sbus[it[0].dataIndex])}}},
     scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   const matrixQ={id:'matrixQ',beforeDatasetsDraw(chart){
@@ -462,7 +467,12 @@ function renderOverview(){
   if(ovc.g)ovc.g.destroy();
   ovc.g=new Chart($('#ovMatrix'),{type:'scatter',data:{datasets:[{data:md,
     backgroundColor:md.map(p=>p.x>=1?(p.y>=0?CL.green:CL.amber):(p.y>=0?CL.blue:CL.red)),borderColor:'#070c18',borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return ` ${d.name} — Ach ${fmtPct(d.x)}, YoY ${fmtSign(d.y*100).replace('%','')+'%'}`;}}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>{const d=c.raw;return ` ${d.name} — Ach ${fmtPct(d.x)}, YoY ${fmtSign(d.y*100).replace('%','')+'%'}`;},
+      footer:it=>{const d=it[0].raw,x=sbus.find(s=>s.code===d.code);
+        return ['Quadrant: '+(d.x>=1?'on-plan':'behind plan')+' + '+(d.y>=0?'growing':'declining'),
+          (d.x>=1&&d.y>=0?'Star — delivering and growing':d.x<1&&d.y>=0?'Potential — growing but still behind plan':d.x>=1?'On-plan but slowing — protect share':'Behind and declining — needs intervention'),
+          'Bubble size = revenue target '+fmtCr(x.rev_tgt)+' Cr · '+(x.trend==null?'ramp/new (no trend)':'Q1 YoY trend '+fmtSign(x.trend*100).replace('%','')+'%')];}}}},
       scales:{x:{min:0,ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Q1 achievement'}},
         y:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Q1 YoY growth'}}}},
     plugins:[matrixQ]});
@@ -473,19 +483,26 @@ function renderOverview(){
     const q1t=list.reduce((s,x)=>s+x.rev_tgt*x.q[1],0);
     const cy=list.reduce((s,x)=>s+x.cy_tot,0);
     const proj=list.reduce((s,x)=>s+x.proj_base,0);
-    return {cat,target,cy,proj,ach:q1t?cy/q1t:0,projAch:target?proj/target:0};
+    return {cat,target,cy,proj,ach:q1t?cy/q1t:0,projAch:target?proj/target:0,n:list.length};
   }).sort((a,b)=>b.target-a.target);
   if(ovc.h)ovc.h.destroy();
   ovc.h=new Chart($('#ovCat'),{type:'bar',data:{labels:catAgg.map(c=>c.cat),datasets:[
     {label:'Q1',data:catAgg.map(c=>c.ach),backgroundColor:CL.blue,borderRadius:4},
     {label:'Projected',data:catAgg.map(c=>c.projAch),backgroundColor:'rgba(99,102,241,.45)',borderRadius:4}
-  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtPct(c.parsed.x)}}},
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+    label:c=>' '+c.dataset.label+': '+fmtPct(c.parsed.x),
+    footer:it=>{const k=catAgg[it[0].dataIndex];
+      return ['Category: '+k.cat+' ('+k.n+' SBUs)','Target '+fmtCr(k.target)+' Cr · Q1 '+fmtCr(k.cy)+' Cr · projected FY '+fmtCr(k.proj)+' Cr',
+        'Q1 ach '+fmtPct(k.ach)+' → projected '+fmtPct(k.projAch)+' ('+toneWord(k.projAch)+')'];}}}},
     scales:{x:{ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   if(ovc.d)ovc.d.destroy();
   const spend=sbus.map(x=>x.cy_mkt_tot);
+  const totSpend=spend.reduce((s,v)=>s+v,0);
   ovc.d=new Chart($('#ovSpend'),{type:'doughnut',data:{labels:sbus.map(x=>x.name),datasets:[{data:spend,backgroundColor:sbus.map(x=>'hsl('+((sbus.indexOf(x)*137)%360)+',60%,55%)'),borderColor:'#101828',borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}}}}});
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}},tooltip:{...TTF,callbacks:{
+      label:c=>' '+fmtCr(c.parsed)+' Cr ('+(totSpend>0?(c.parsed/totSpend*100).toFixed(1):'0')+'%)',
+      footer:it=>spendReason(sbus[it[0].dataIndex],totSpend)}}}}});
 }
 
 /* ---------- Forecast ---------- */
@@ -516,6 +533,39 @@ function sbuForecastReason(x){
     lines.push('Gap vs plan: '+fmtSign(x.proj_gap)+' Cr  ('+fmtPct(x.projected_ach)+' of target)');
     if(x.required_run>0) lines.push('To hit plan it needs '+fmtCr(x.required_run)+' Cr/mo over the next 9 months');
   }
+  return lines;
+}
+
+function toneWord(v){return v>=.9?'On track (≥90%)':(v>=.6?'At risk (60–90%)':'Behind plan (<60%)');}
+function achReason(x){
+  const phased=x.rev_tgt*x.q[1];
+  return ['Q1 actual '+fmtCr(x.cy_tot)+' Cr vs Q1 phased target '+fmtCr(phased)+' Cr',
+    'Achievement '+fmtPct(x.rev_ach)+' — '+toneWord(x.rev_ach),
+    'Gap vs phased: '+fmtSign(x.cy_tot-phased)+' Cr'];
+}
+function mrReason(x){
+  return ['Marketing Revenue = CY − PY, like-for-like (GL 3010001 + 3010002)',
+    'CY '+fmtCr(x.cy_tot)+' Cr − PY '+fmtCr(x.py_tot)+' Cr = '+fmtSign(x.mr_tot)+' Cr',
+    'YoY '+(x.py_tot>0.01?((x.mr_tot/x.py_tot)>=0?'+':'')+(x.mr_tot/x.py_tot*100).toFixed(1)+'%':'n/a (no prior-year base)')];
+}
+function mpReason(x){
+  return ['Marketing Profit = Marketing Revenue × FY26 gross margin',
+    fmtSign(x.mr_tot)+' Cr × '+fmtPct(x.gp)+' = '+fmtSign(x.mp_tot)+' Cr'];
+}
+function spendReason(x,tot){
+  const sh=tot>0?(x.cy_mkt_tot/tot*100):0;
+  return ['Q1-to-date marketing spend (GL 4210001)',
+    fmtCr(x.cy_mkt_tot)+' Cr = '+sh.toFixed(1)+'% of total portfolio spend',
+    'Spend intensity '+fmtPct(x.cy_intensity)+' of revenue (prior year '+fmtPct(x.py_intensity)+')'];
+}
+function effReason(x){
+  const c=effClass(x);
+  const lines=['Class: '+c.label,
+    'Mkt revenue '+fmtSign(x.mr_tot)+' Cr ÷ spend '+fmtCr(x.cy_mkt_tot)+' Cr = '+(x.rev_per_spend>=0?'+':'')+x.rev_per_spend.toFixed(1)+'×'];
+  if(x.rev_per_spend>=1) lines.push('Each 1 Cr of spend returned ≥1 Cr of incremental revenue — efficient');
+  else if(x.mr_tot>=0) lines.push('Growth but each Cr of spend returns <1 Cr — costly growth');
+  else lines.push('Spend continued while revenue fell year-on-year — declining on spend');
+  if(x.mom!=null) lines.push('Momentum Aug vs Jul: '+(x.mom>=0?'+':'')+(x.mom*100).toFixed(1)+'%');
   return lines;
 }
 
@@ -617,24 +667,43 @@ function renderDetail(){
   dcc.a=new Chart($('#dForecast'),{type:'bar',data:{labels:fc.map(m=>m.label),datasets:[
     {type:'bar',label:'Revenue',data:fc.map(m=>m.val),backgroundColor:fc.map(m=>m.actual?CL.green:CL.blue),borderRadius:4,order:2},
     {type:'line',label:'Target',data:fc.map(m=>m.target),borderColor:'#94a3b8',borderDash:[5,5],pointRadius:0,tension:.25,order:1}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+    label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y),
+    footer:it=>{const m=fc[it[0].dataIndex],lines=[];
+      if(m.actual) lines.push('ACTUAL — GL 3010001 + 3010002 (÷1e7)');
+      else if(s.trend!=null) lines.push('FORECAST = PY same-month × '+(1+s.trend).toFixed(3));
+      else if(s.run_rate>0.5) lines.push('FORECAST = flat run-rate '+fmtCr(s.run_rate)+' Cr/mo');
+      else lines.push('Pre-launch — no forecast basis');
+      lines.push('Target '+fmtCr(m.target)+' Cr → '+(m.val>=m.target?'ahead by':'short by')+' '+fmtCr(Math.abs(m.val-m.target))+' Cr');
+      lines.push('Projected FY27 '+fmtCr(s.proj_base)+' Cr ('+fmtPct(s.projected_ach)+' of target)');
+      return lines;}}}},
     scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 
   dcc.b=new Chart($('#dCyPy'),{type:'bar',data:{labels:s.pairs.map(p=>p.cl.replace(' (MTD)','')),datasets:[
     {label:'CY',data:s.pairs.map(p=>p.cy),backgroundColor:CL.green,borderRadius:4},
     {label:'PY',data:s.pairs.map(p=>p.py),backgroundColor:'#33415f',borderRadius:4}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y)}}},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10}},tooltip:{...TTF,callbacks:{
+    label:c=>' '+c.dataset.label+': '+fmtCr(c.parsed.y),
+    footer:it=>{const p=s.pairs[it[0].dataIndex];
+      return [p.cl+': CY '+fmtCr(p.cy)+' Cr vs PY '+fmtCr(p.py)+' Cr',
+        'YoY change '+fmtSign(p.mr)+' Cr ('+(p.py>0.01?(p.mr/p.py>=0?'+':'')+(p.mr/p.py*100).toFixed(1)+'%':'n/a — no prior-year base')+')'];}}}},
     scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 
   dcc.c=new Chart($('#dMr'),{type:'bar',data:{labels:s.pairs.map(p=>p.cl.replace(' (MTD)','')),datasets:[{data:s.pairs.map(p=>p.mr),backgroundColor:s.pairs.map(p=>p.mr>=0?CL.green:CL.red),borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.y)}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+fmtSign(c.parsed.y)+' Cr',
+      footer:it=>{const p=s.pairs[it[0].dataIndex];return ['Marketing revenue '+p.cl+' = '+fmtSign(p.mr)+' Cr','CY '+fmtCr(p.cy)+' Cr − PY '+fmtCr(p.py)+' Cr'];}}}},
       scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 
   if(s.seasonality){
     dcc.se=new Chart($('#dSeason'),{type:'bar',data:{labels:s.seasonality.map(x=>x.l),datasets:[
       {type:'bar',label:'Index',data:s.seasonality.map(x=>x.idx),backgroundColor:s.seasonality.map(x=>x.idx>=1?CL.blue:CL.grey),borderRadius:3,order:2},
       {type:'line',label:'Avg',data:s.seasonality.map(()=>1.0),borderColor:'#94a3b8',borderDash:[4,4],pointRadius:0,order:1}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toFixed(2)+'× avg'}}},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+c.parsed.y.toFixed(2)+'× avg',
+      footer:it=>{const d=s.seasonality[it[0].dataIndex];
+        return [d.l+' index '+d.idx.toFixed(2)+'×',
+          'FY26 month is '+(Math.abs(d.idx-1)*100).toFixed(0)+'% '+(d.idx>=1?'above':'below')+' the annual average — '+(d.idx>=1?'seasonally strong':'seasonally weak')];}}}},
       scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>v.toFixed(1)+'×'}}}}});
   }else{
     dcc.se=new Chart($('#dSeason'),{type:'bar',data:{labels:['Insufficient FY26 history'],datasets:[{data:[0],backgroundColor:CL.grey,borderRadius:3}]},
@@ -643,7 +712,10 @@ function renderDetail(){
   }
 
   dcc.d=new Chart($('#dTraj'),{type:'bar',data:{labels:s.traj.map(t=>t.l),datasets:[{data:s.traj.map(t=>t.v),backgroundColor:s.traj.map(t=>t.fy==='fy26'?CL.blue:CL.green),borderRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtCr(c.parsed.y)}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+fmtCr(c.parsed.y),
+      footer:it=>{const t=s.traj[it[0].dataIndex];
+        return [(t.fy==='fy26'?'FY26 (prior year)':'FY27 (current year)')+' — '+t.l+': '+fmtCr(t.v)+' Cr'];}}}},
       scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>fmtCr(v)}}}}});
 
   const scen=[
@@ -701,10 +773,13 @@ function renderEfficiency(){
   }));
 
   Object.values(eff).forEach(c=>c&&c.destroy()); eff={};
-  eff.b=new Chart($('#efBar'),{type:'bar',data:{labels:arr.filter(x=>x.rev_per_spend!=null).map(x=>x.code),
-    datasets:[{data:arr.filter(x=>x.rev_per_spend!=null).map(x=>x.rev_per_spend),
-      backgroundColor:arr.filter(x=>x.rev_per_spend!=null).map(x=>CL[effClass(x).tone]),borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+(c.parsed.x>=0?'+':'')+c.parsed.x.toFixed(1)+'× growth per 1 Cr spend'}}},
+  const efRows=arr.filter(x=>x.rev_per_spend!=null);
+  eff.b=new Chart($('#efBar'),{type:'bar',data:{labels:efRows.map(x=>x.code),
+    datasets:[{data:efRows.map(x=>x.rev_per_spend),
+      backgroundColor:efRows.map(x=>CL[effClass(x).tone]),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>' '+(c.parsed.x>=0?'+':'')+c.parsed.x.toFixed(1)+'× growth per 1 Cr spend',
+      footer:it=>effReason(efRows[it[0].dataIndex])}}},
       scales:{x:{grid:{color:'rgba(255,255,255,.05)'}},y:{grid:{display:false}}}}});
 
   const diag={id:'diag',beforeDatasetsDraw(chart){
@@ -718,7 +793,12 @@ function renderEfficiency(){
   eff.s=new Chart($('#efScatter'),{type:'scatter',data:{datasets:[{label:'SBU',
     data:arr.map(x=>({x:x.cy_mkt_tot,y:x.mr_tot,r:Math.max(4,Math.min(20,Math.sqrt(x.rev_tgt)*1.2)),code:x.code,name:x.name,tone:effClass(x).tone})),
     backgroundColor:arr.map(x=>CL[effClass(x).tone]),borderColor:'#070c18',borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return ` ${d.name} — spend ${fmtCr(d.x)}, mkt rev ${fmtSign(d.y)}`;}}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TTF,callbacks:{
+      label:c=>{const d=c.raw;return ` ${d.name} — spend ${fmtCr(d.x)}, mkt rev ${fmtSign(d.y)}`;},
+      footer:it=>{const d=it[0].raw,x=arr[it[0].dataIndex];
+        return ['Bubble size = revenue target '+fmtCr(x.rev_tgt)+' Cr',
+          d.y>=d.x?'Above the 1:1 line — each 1 Cr of spend returns >1 Cr growth':'Below the 1:1 line — spend exceeds the growth it generates',
+          ...effReason(x)];}}}},
       scales:{x:{min:0,grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Marketing spend (Cr)'}},
         y:{min:0,grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Marketing revenue (Cr)'}}}},
     plugins:[diag]});
