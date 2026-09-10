@@ -326,15 +326,15 @@ function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt
 /* ---------- KPIs ---------- */
 function renderKPIs(){
   const k=[
-    {l:'FY27 Revenue Target',v:fmtCr(meta.total_rev),s:'16 SBUs',c:''},
-    {l:'Q1 Revenue (to-date)',v:fmtCr(meta.total_cy),s:'Jul+Aug+Sep (9d MTD)',c:''},
-    {l:'Q1 Achievement',v:fmtPct(meta.total_cy_ach),s:'vs Q1 phased target',c:pctTone(meta.total_cy_ach)},
-    {l:'Marketing Revenue',v:fmtSign(meta.total_mr),s:'CY − PY, like-for-like',c:meta.total_mr>=0?'g':''},
-    {l:'Marketing Profit',v:fmtSign(meta.total_mp),s:'at FY26 gross margin',c:meta.total_mp>=0?'g':''},
-    {l:'Projected FY27',v:fmtCr(meta.total_proj),s:'current trend held',c:'b'},
-    {l:'Projected Ach.',v:fmtPct(meta.total_proj_ach),s:'vs 9,111 Cr target',c:pctTone(meta.total_proj_ach)},
+    {l:'FY27 Revenue Target',v:fmtCr(meta.total_rev),s:'16 SBUs',c:'',t:'Sum of the 16 SBU FY27 revenue targets (Revenue Assurance Plan). Basis: GL 3010001 + 3010002. Unit BDT Crore.'},
+    {l:'Q1 Revenue (to-date)',v:fmtCr(meta.total_cy),s:'Jul+Aug+Sep (9d MTD)',c:'',t:'Jul + Aug + Sep-2026 actual revenue. Sep is only 9 days (1–9 Sep) vs like-for-like 1–9 Sep 2025. GL 3010001 + 3010002.'},
+    {l:'Q1 Achievement',v:fmtPct(meta.total_cy_ach),s:'vs Q1 phased target',c:pctTone(meta.total_cy_ach),t:'Q1-to-date revenue ÷ Q1 phased target. RAG: ≥90% on track, 60–90% at risk, <60% behind plan.'},
+    {l:'Marketing Revenue',v:fmtSign(meta.total_mr),s:'CY − PY, like-for-like',c:meta.total_mr>=0?'g':'',t:'CY revenue − PY same-period revenue (like-for-like). Positive = growth over the prior year; negative = below prior year.'},
+    {l:'Marketing Profit',v:fmtSign(meta.total_mp),s:'at FY26 gross margin',c:meta.total_mp>=0?'g':'',t:'Marketing Revenue × FY26 gross margin — the incremental gross profit that the marketing-driven growth generates.'},
+    {l:'Projected FY27',v:fmtCr(meta.total_proj),s:'current trend held',c:'b',t:'Where the portfolio lands at year-end if each SBU holds its current Q1 trend for the next 9 months (seasonal × trend, or flat run-rate for ramp/new SBUs).'},
+    {l:'Projected Ach.',v:fmtPct(meta.total_proj_ach),s:'vs 9,111 Cr target',c:pctTone(meta.total_proj_ach),t:'Projected FY27 ÷ total target. The headline gap: portfolio is tracking below the 9,111 Cr plan unless run-rate improves.'},
   ];
-  $('#kpis').innerHTML=k.map(x=>`<div class="kpi ${x.c}"><div class="lbl">${x.l}</div><div class="val num">${x.v}</div><div class="sub">${x.s}</div></div>`).join('');
+  $('#kpis').innerHTML=k.map(x=>`<div class="kpi ${x.c}" title="${esc(x.t)}"><div class="lbl">${x.l}</div><div class="val num">${x.v}</div><div class="sub">${x.s}</div></div>`).join('');
 }
 
 /* ---------- Tabs ---------- */
@@ -359,7 +359,7 @@ function renderTable(){
   });
   $('#pbody').innerHTML=arr.map(x=>{
     const st=x.status;
-    return `<tr class="click" data-code="${x.code}">
+    return `<tr class="click" data-code="${x.code}" title="${sbuHover(x)}">
       <td><b>${esc(x.name)}</b> <span class="mut">${x.code}</span></td>
       <td class="mut">${esc(x.category)}</td>
       <td class="num">${fmtCr(x.rev_tgt)}</td>
@@ -568,6 +568,16 @@ function effReason(x){
   if(x.mom!=null) lines.push('Momentum Aug vs Jul: '+(x.mom>=0?'+':'')+(x.mom*100).toFixed(1)+'%');
   return lines;
 }
+function sbuHover(x){
+  return [x.name+' ('+x.code+') · '+x.category,
+    'Status: '+x.status.label+' — '+x.status.narrative,
+    ...sbuForecastReason(x)].map(esc).join('&#10;');
+}
+function effHover(x){
+  return [x.name+' ('+x.code+') · '+x.category,
+    x.status.label,
+    ...effReason(x)].map(esc).join('&#10;');
+}
 
 function renderForecast(){
   if(fcc.m)Object.values(fcc).forEach(c=>c.destroy&&c.destroy()); fcc={};
@@ -756,7 +766,7 @@ function renderEfficiency(){
   const arr=sbus.map(x=>({...x, cls:effClass(x)})).sort(effSort);
   $('#ebody').innerHTML=arr.map(x=>{
     const c=x.cls;
-    return `<tr class="click" data-code="${x.code}">
+    return `<tr class="click" data-code="${x.code}" title="${effHover(x)}">
       <td><b>${esc(x.name)}</b> <span class="mut">${x.code}</span></td>
       <td class="num ${x.mr_tot>=0?'pos':'neg'}">${fmtSign(x.mr_tot)}</td>
       <td class="num">${fmtCr(x.cy_mkt_tot)}</td>
