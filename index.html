@@ -447,7 +447,7 @@ function renderDetail(){
     ['Proj Ach',fmtPct(s.projected_ach),pctTone(s.projected_ach)],['Run-rate (Jul+Aug)',fmtCr(s.run_rate)+' Cr/mo','']
   ].map(m=>`<div class="mini"><div class="ml">${m[0]}</div><div class="mv num ${m[2]}">${m[1]}</div></div>`).join('');
 
-  if(dcc.a)Object.values(dcc).forEach(c=>c.destroy); dcc={};
+  Object.values(dcc).forEach(c=>c&&c.destroy()); dcc={};
 
   const fc=s.fc;
   dcc.a=new Chart($('#dForecast'),{type:'bar',data:{labels:fc.map(m=>m.label),datasets:[
